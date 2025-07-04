@@ -1,371 +1,635 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { Check, ChevronRight, Circle } from "lucide-react";
 import Header from "../components/Header";
 import Sidebar from "../components/Sidebar";
-import { X, Check, Calendar, Clock, Utensils } from "lucide-react";
+import toast, { Toaster } from "react-hot-toast";
 
-const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday"];
+const days = ["Sun", "Mon", "Tue", "Wed", "Thu"];
+
 const options = {
-  main: [
-    { name: "Chicken", emoji: "🍗", color: "bg-orange-50 border-orange-200" },
-    { name: "Beef", emoji: "🥩", color: "bg-red-50 border-red-200" },
-    { name: "Fish", emoji: "🐟", color: "bg-blue-50 border-blue-200" },
-    { name: "Vegan", emoji: "🥬", color: "bg-green-50 border-green-200" },
-  ],
-  salad1: [
-    { name: "Cucumber", emoji: "🥒", color: "bg-green-50 border-green-200" },
-    { name: "Tomato", emoji: "🍅", color: "bg-red-50 border-red-200" },
-    { name: "Coleslaw", emoji: "🥗", color: "bg-yellow-50 border-yellow-200" },
-  ],
-  salad2: [
-    { name: "Corn", emoji: "🌽", color: "bg-yellow-50 border-yellow-200" },
-    { name: "Greek", emoji: "🫒", color: "bg-green-50 border-green-200" },
-    { name: "Caesar", emoji: "🥬", color: "bg-green-50 border-green-200" },
-  ],
-  side1: [
-    { name: "Rice", emoji: "🍚", color: "bg-gray-50 border-gray-200" },
-    { name: "Potatoes", emoji: "🥔", color: "bg-yellow-50 border-yellow-200" },
-    { name: "Pasta", emoji: "🍝", color: "bg-orange-50 border-orange-200" },
-  ],
-  side2: [
-    { name: "Beans", emoji: "🫘", color: "bg-amber-50 border-amber-200" },
-    { name: "Lentils", emoji: "🟤", color: "bg-amber-50 border-amber-200" },
-    { name: "Couscous", emoji: "🌾", color: "bg-yellow-50 border-yellow-200" },
-  ],
+  main: ["Chicken", "Beef", "Fish", "Vegan"],
+  salad1: ["Cucumber", "Tomato", "Coleslaw"],
+  salad2: ["Corn", "Greek", "Caesar"],
+  side1: ["Rice", "Potatoes", "Pasta"],
+  side2: ["Beans", "Lentils", "Couscous"],
 };
 
-const fieldLabels = {
-  main: "Main Course",
-  salad1: "Fresh Salad",
-  salad2: "Side Salad",
-  side1: "Primary Side",
-  side2: "Secondary Side",
-};
+const categories = [
+  { key: "main", label: "Main" },
+  { key: "salad1", label: "Salad 1" },
+  { key: "salad2", label: "Salad 2" },
+  { key: "side1", label: "Side 1" },
+  { key: "side2", label: "Side 2" },
+];
+
+function getWeekId(date = new Date()) {
+  const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const day = d.getDay() || 7;
+  d.setDate(d.getDate() + 4 - day);
+  const yearStart = new Date(d.getFullYear(), 0, 1);
+  const week = Math.ceil(((d - yearStart) / 86400000 + 1) / 7);
+  return `${d.getFullYear()}-W${week}`;
+}
+
+// Toast notification component
+const Toast = ({ message, type, onClose }) => (
+  <div
+    className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg ${
+      type === "success"
+        ? "bg-green-500 text-white"
+        : type === "error"
+        ? "bg-red-500 text-white"
+        : "bg-blue-500 text-white"
+    }`}
+  >
+    <div className="flex items-center justify-between">
+      <span>{message}</span>
+      <button onClick={onClose} className="ml-4 text-white hover:text-gray-200">
+        ×
+      </button>
+    </div>
+  </div>
+);
 
 export default function MealOrderingForm() {
-  const user = JSON.parse(localStorage.getItem("user"));
   const [meals, setMeals] = useState(
     days.map((day) => ({
       day,
+      catering: "", // "1" or "2"
       main: "",
       salad1: "",
       salad2: "",
       side1: "",
       side2: "",
-      notes: "",
     }))
   );
+
   const [show, setShow] = useState(true);
-  const [currentDay, setCurrentDay] = useState(0);
+  const [activeDay, setActiveDay] = useState(0);
+  const [orders, setOrders] = useState({});
 
+  const currentWeekId = getWeekId();
+  const today = new Date();
+  const currentDayIndex = today.getDay();
+  const allowEdit = currentDayIndex >= 0 && currentDayIndex <= 3; // Sunday–Wednesday
+  const nextWeekId = getWeekId(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000));
+  const nextWeekMeals = orders[nextWeekId] || {};
+  const currentWeekMeals = orders[currentWeekId] || {};
+
+  const user = JSON.parse(localStorage.getItem("user"));
+  const userId = user?._id;
   const handleChange = (day, field, value) => {
+    if (!allowEdit) return;
+
     setMeals((prev) =>
-      prev.map((meal) =>
-        meal.day === day ? { ...meal, [field]: value } : meal
-      )
+      prev.map((meal) => {
+        if (meal.day === day) {
+          const updatedMeal = { ...meal, [field]: value };
+
+          // If catering type changes, reset other selections
+          if (field === "catering") {
+            return {
+              ...updatedMeal,
+              main: "",
+              salad1: "",
+              salad2: "",
+              side1: "",
+              side2: "",
+            };
+          }
+
+          return updatedMeal;
+        }
+        return meal;
+      })
     );
-  };
-
-  const handleSubmit = async () => {
-    try {
-      const res = await fetch("http://localhost:5000/api/meals", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: user._id, meals }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        alert("Order submitted successfully!");
-        setShow(false);
-      } else {
-        alert("Submission error");
-      }
-    } catch (err) {
-      alert("Server error", err.message);
-    }
-  };
-
-  const getCompletionPercentage = () => {
-    const totalFields = meals.length * 5; // 5 fields per day
-    const completedFields = meals.reduce((acc, meal) => {
-      return (
-        acc +
-        [meal.main, meal.salad1, meal.salad2, meal.side1, meal.side2].filter(
-          Boolean
-        ).length
-      );
-    }, 0);
-    return Math.round((completedFields / totalFields) * 100);
   };
 
   const isDayComplete = (meal) => {
-    return [meal.main, meal.salad1, meal.salad2, meal.side1, meal.side2].every(
-      Boolean
-    );
+    if (!meal.catering) return false;
+
+    if (meal.catering === "1") {
+      return (
+        meal.main && meal.salad1 && meal.salad2 && meal.side1 && meal.side2
+      );
+    } else if (meal.catering === "2") {
+      return meal.main;
+    }
+
+    return false;
   };
+
+  const getProgress = () => {
+    const completedDays = meals.filter(isDayComplete).length;
+    return Math.round((completedDays / days.length) * 100);
+  };
+
+  const handleSubmit = async () => {
+    const isComplete = meals.every(isDayComplete);
+
+    if (!isComplete) {
+      toast.error("Please complete all meal selections before submitting.");
+      return;
+    }
+
+    try {
+      const response = await fetch("http://localhost:5000/api/meals", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userId: userId,
+          weekId: nextWeekId,
+          meals,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Server error");
+      }
+
+      const data = await response.json();
+      toast.success(data.message || "Order submitted successfully!");
+
+      setOrders((prevOrders) => ({
+        ...prevOrders,
+        [nextWeekId]: Object.fromEntries(
+          meals.map((meal) => [meal.day, { ...meal, week: nextWeekId }])
+        ),
+      }));
+    } catch (err) {
+      toast.error("Server error: " + err.message);
+    }
+  };
+
+  //   console.log("userId:", userId);
+  useEffect(() => {
+    const userObj = JSON.parse(localStorage.getItem("user"));
+    const userId = userObj?._id;
+    if (!userId) return;
+
+    const fetchOrders = async () => {
+      try {
+        const res = await fetch(`http://localhost:5000/api/meals/${userId}`);
+        const data = await res.json();
+
+        const structured = {};
+
+        data.forEach((entry) => {
+          const weekId = entry.week || entry.weekId;
+
+          if (entry.meals && Array.isArray(entry.meals)) {
+            entry.meals.forEach((meal) => {
+              if (!structured[weekId]) structured[weekId] = {};
+              structured[weekId][meal.day] = meal;
+            });
+          } else if (entry.day) {
+            if (!structured[weekId]) structured[weekId] = {};
+            structured[weekId][entry.day] = entry;
+          }
+        });
+
+        setOrders(structured);
+      } catch (err) {
+        console.error("Failed to fetch orders", err);
+      }
+    };
+
+    fetchOrders();
+  }, []);
 
   if (!show)
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center">
-        <div className="text-center bg-white p-12 border border-gray-200 max-w-md">
-          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <Check className="w-8 h-8 text-green-600" />
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="bg-white border border-gray-200 p-8 max-w-sm text-center rounded-lg shadow-sm">
+          <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Check className="w-6 h-6 text-white" />
           </div>
-          <h2 className="text-2xl font-light text-gray-900 mb-2">
-            Order Confirmed!
-          </h2>
-          <p className="text-gray-600 mb-8">
-            Your weekly meal plan has been submitted successfully
-          </p>
+          <h2 className="text-xl font-medium text-gray-900 mb-2">Complete</h2>
+          <p className="text-gray-600 mb-6">Weekly meal plan submitted</p>
           <button
             onClick={() => setShow(true)}
-            className="px-6 py-2 bg-gray-900 text-white text-sm hover:bg-gray-800 transition-colors"
+            className="w-full py-2 bg-gray-900 text-white text-sm hover:bg-gray-800 transition-colors rounded"
           >
-            Plan Another Week
+            New Plan
           </button>
         </div>
       </div>
     );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
+    <div className="min-h-screen bg-gray-50">
       <Header user={user} />
-      <div className="flex">
-        <Sidebar user={user} />
+      <Sidebar user={user} />
+      <Toaster position="top-center" />
 
-        <main className="flex-1 p-6">
-          <div className="max-w-6xl mx-auto">
-            {/* Header with Progress */}
-            <div className="mb-12">
-              <div className="flex items-center justify-between mb-6">
-                <div>
-                  <h1 className="text-3xl font-light text-gray-900 mb-2">
-                    Weekly Meal Planner
-                  </h1>
-                  <p className="text-gray-600">
-                    Create your personalized meal plan for the week
-                  </p>
-                </div>
-                <button
-                  onClick={() => setShow(false)}
-                  className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
-                >
-                  <X size={20} />
-                </button>
-              </div>
-
-              {/* Progress Bar */}
-              <div className="bg-gray-200 h-2 overflow-hidden">
-                <div
-                  className="bg-gradient-to-r from-green-400 to-blue-500 h-full transition-all duration-500 ease-out"
-                  style={{ width: `${getCompletionPercentage()}%` }}
-                />
-              </div>
-              <div className="flex justify-between items-center mt-2">
-                <span className="text-sm text-gray-600">
-                  {getCompletionPercentage()}% Complete
-                </span>
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <Clock size={14} />
-                  <span>~5 min remaining</span>
-                </div>
+      <div className="max-w-6xl mx-auto p-6">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Meal Planner</h1>
+            <p className="text-gray-600 mt-1">Configure meals for next week</p>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="text-right">
+              <div className="text-sm text-gray-500">Progress</div>
+              <div className="text-2xl font-bold text-gray-900">
+                {getProgress()}%
               </div>
             </div>
-
-            {/* Day Navigation */}
-            <div className="flex gap-2 mb-8 overflow-x-auto pb-2">
-              {days.map((day, index) => (
-                <button
-                  key={day}
-                  onClick={() => setCurrentDay(index)}
-                  className={`flex items-center gap-2 px-4 py-2 text-sm whitespace-nowrap transition-all ${
-                    currentDay === index
-                      ? "bg-gray-900 text-white"
-                      : "bg-white border border-gray-200 text-gray-600 hover:border-gray-300"
-                  }`}
-                >
-                  {isDayComplete(meals[index]) && (
-                    <Check size={14} className="text-green-400" />
-                  )}
-                  <Calendar size={14} />
-                  {day}
-                </button>
-              ))}
-            </div>
-
-            {/* Current Day Meal Planning */}
-            <div className="bg-white border border-gray-200 p-8 mb-8">
-              <div className="flex items-center gap-3 mb-8">
-                <div className="w-10 h-10 bg-gradient-to-r from-orange-400 to-red-400 rounded-full flex items-center justify-center">
-                  <Utensils className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <h2 className="text-2xl font-medium text-gray-900">
-                    {meals[currentDay].day}
-                  </h2>
-                  <p className="text-gray-600">Plan your meals for this day</p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {["main", "salad1", "salad2", "side1", "side2"].map((field) => (
-                  <div key={field} className="space-y-3">
-                    <label className="block text-sm font-medium text-gray-700">
-                      {fieldLabels[field]}
-                    </label>
-                    <div className="grid grid-cols-1 gap-2">
-                      {options[field].map((option) => (
-                        <button
-                          key={option.name}
-                          onClick={() =>
-                            handleChange(
-                              meals[currentDay].day,
-                              field,
-                              option.name
-                            )
-                          }
-                          className={`p-3 border-2 text-left transition-all hover:scale-105 ${
-                            meals[currentDay][field] === option.name
-                              ? `${option.color} border-current shadow-md`
-                              : "bg-white border-gray-200 hover:border-gray-300"
-                          }`}
-                        >
-                          <div className="flex items-center gap-3">
-                            <span className="text-2xl">{option.emoji}</span>
-                            <span className="font-medium">{option.name}</span>
-                            {meals[currentDay][field] === option.name && (
-                              <Check
-                                size={16}
-                                className="ml-auto text-green-600"
-                              />
-                            )}
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Notes Section */}
-              <div className="mt-8 pt-6 border-t border-gray-100">
-                <label className="block text-sm font-medium text-gray-700 mb-3">
-                  Special Instructions
-                </label>
-                <textarea
-                  className="w-full px-4 py-3 border border-gray-300 text-sm focus:outline-none focus:border-gray-500 resize-none"
-                  rows={3}
-                  placeholder="Any dietary restrictions, allergies, or special requests for this day..."
-                  value={meals[currentDay].notes}
-                  onChange={(e) =>
-                    handleChange(meals[currentDay].day, "notes", e.target.value)
-                  }
-                />
-              </div>
-            </div>
-
-            {/* Navigation */}
-            <div className="flex justify-between items-center mb-8">
-              <button
-                onClick={() => setCurrentDay(Math.max(0, currentDay - 1))}
-                disabled={currentDay === 0}
-                className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                ← Previous Day
-              </button>
-
-              <div className="flex gap-2">
-                {days.map((_, index) => (
-                  <div
-                    key={index}
-                    className={`w-2 h-2 rounded-full transition-all ${
-                      index === currentDay ? "bg-gray-900" : "bg-gray-300"
-                    }`}
-                  />
-                ))}
-              </div>
-
-              {currentDay < days.length - 1 ? (
-                <button
-                  onClick={() => setCurrentDay(currentDay + 1)}
-                  className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900"
-                >
-                  Next Day →
-                </button>
-              ) : (
-                <button
-                  onClick={handleSubmit}
-                  className="px-6 py-2 bg-gradient-to-r from-green-500 to-blue-500 text-white text-sm hover:from-green-600 hover:to-blue-600 transition-all transform hover:scale-105"
-                >
-                  Submit Order ✨
-                </button>
-              )}
-            </div>
-
-            {/* Week Overview */}
-            <div className="bg-gray-50 border border-gray-200 p-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">
-                Week Overview
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-                {meals.map((meal, i) => (
-                  <div
-                    key={i}
-                    className={`p-4 bg-white border transition-all cursor-pointer hover:shadow-md ${
-                      i === currentDay
-                        ? "border-gray-400 shadow-sm"
-                        : "border-gray-200"
-                    }`}
-                    onClick={() => setCurrentDay(i)}
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="font-medium text-gray-900">
-                        {meal.day}
-                      </span>
-                      {isDayComplete(meal) && (
-                        <Check size={16} className="text-green-500" />
-                      )}
-                    </div>
-                    <div className="text-xs text-gray-600 space-y-1">
-                      {[
-                        meal.main,
-                        meal.salad1,
-                        meal.salad2,
-                        meal.side1,
-                        meal.side2,
-                      ]
-                        .filter(Boolean)
-                        .slice(0, 2)
-                        .map((item, idx) => (
-                          <div key={idx}>• {item}</div>
-                        ))}
-                      {[
-                        meal.main,
-                        meal.salad1,
-                        meal.salad2,
-                        meal.side1,
-                        meal.side2,
-                      ].filter(Boolean).length > 2 && (
-                        <div className="text-gray-400">
-                          +
-                          {[
-                            meal.main,
-                            meal.salad1,
-                            meal.salad2,
-                            meal.side1,
-                            meal.side2,
-                          ].filter(Boolean).length - 2}{" "}
-                          more
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
+            <div className="w-16 h-16 border-2 border-gray-200 rounded-full flex items-center justify-center">
+              <div className="text-lg font-bold text-gray-600">
+                {activeDay + 1}/5
               </div>
             </div>
           </div>
-        </main>
+        </div>
+
+        {/* Day Navigation */}
+        <div className="flex gap-2 mb-8 bg-white border border-gray-200 p-2 rounded-lg shadow-sm">
+          {days.map((day, index) => {
+            const isComplete = isDayComplete(meals[index]);
+            return (
+              <button
+                key={day}
+                onClick={() => setActiveDay(index)}
+                className={`flex-1 py-4 px-6 text-sm font-medium transition-all relative rounded-md ${
+                  activeDay === index
+                    ? "bg-gray-900 text-white shadow-md"
+                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                }`}
+              >
+                {isComplete && (
+                  <div className="absolute top-2 right-2 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
+                )}
+                <div className="font-semibold">{day}</div>
+                <div className="text-xs opacity-75 mt-1">
+                  {meals[index].catering
+                    ? `Catering ${meals[index].catering}`
+                    : "Not set"}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Main Form */}
+        <div className="bg-white border border-gray-200 rounded-lg shadow-sm">
+          <div className="border-b border-gray-200 px-6 py-4">
+            <h2 className="text-xl font-semibold text-gray-900">
+              {days[activeDay]} - Meal Selection
+            </h2>
+          </div>
+
+          <div className="p-6">
+            {/* Catering Selection */}
+            <div className="mb-8">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">
+                Select Catering Option
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <button
+                  onClick={() =>
+                    handleChange(meals[activeDay].day, "catering", "1")
+                  }
+                  className={`p-6 border-2 rounded-lg text-left transition-all ${
+                    meals[activeDay].catering === "1"
+                      ? "border-gray-900 bg-gray-50"
+                      : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="font-semibold text-gray-900">Catering 1</h4>
+                    {meals[activeDay].catering === "1" ? (
+                      <Check className="w-5 h-5 text-gray-900" />
+                    ) : (
+                      <Circle className="w-5 h-5 text-gray-300" />
+                    )}
+                  </div>
+                  <p className="text-sm text-gray-600">
+                    Full meal: 1 main dish + 2 salads + 2 sides
+                  </p>
+                </button>
+
+                <button
+                  onClick={() =>
+                    handleChange(meals[activeDay].day, "catering", "2")
+                  }
+                  className={`p-6 border-2 rounded-lg text-left transition-all ${
+                    meals[activeDay].catering === "2"
+                      ? "border-gray-900 bg-gray-50"
+                      : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="font-semibold text-gray-900">Catering 2</h4>
+                    {meals[activeDay].catering === "2" ? (
+                      <Check className="w-5 h-5 text-gray-900" />
+                    ) : (
+                      <Circle className="w-5 h-5 text-gray-300" />
+                    )}
+                  </div>
+                  <p className="text-sm text-gray-600">
+                    Simple meal: 1 main dish only
+                  </p>
+                </button>
+              </div>
+            </div>
+
+            {/* Meal Selection */}
+            {meals[activeDay].catering && (
+              <div className="space-y-8">
+                <h3 className="text-lg font-medium text-gray-900">
+                  Select Your Meals
+                </h3>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  {categories.map((category) => {
+                    // Show all categories for catering 1, only main for catering 2
+                    if (
+                      meals[activeDay].catering === "2" &&
+                      category.key !== "main"
+                    ) {
+                      return null;
+                    }
+
+                    return (
+                      <div key={category.key} className="space-y-4">
+                        <div className="flex items-center justify-between">
+                          <label className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
+                            {category.label}
+                          </label>
+                          <div className="text-xs text-gray-400 font-mono bg-gray-100 px-2 py-1 rounded">
+                            {meals[activeDay][category.key]
+                              ? "SELECTED"
+                              : "PENDING"}
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          {options[category.key].map((option) => {
+                            const isSelected =
+                              meals[activeDay][category.key] === option;
+                            return (
+                              <button
+                                key={option}
+                                onClick={() =>
+                                  handleChange(
+                                    meals[activeDay].day,
+                                    category.key,
+                                    option
+                                  )
+                                }
+                                className={`w-full flex items-center justify-between p-4 border-2 rounded-lg text-left text-sm transition-all ${
+                                  isSelected
+                                    ? "border-gray-900 bg-gray-50 shadow-sm"
+                                    : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                                }`}
+                              >
+                                <span
+                                  className={`font-medium ${
+                                    isSelected
+                                      ? "text-gray-900"
+                                      : "text-gray-600"
+                                  }`}
+                                >
+                                  {option}
+                                </span>
+                                <div className="flex items-center gap-2">
+                                  {isSelected ? (
+                                    <Check className="w-5 h-5 text-gray-900" />
+                                  ) : (
+                                    <Circle className="w-5 h-5 text-gray-300" />
+                                  )}
+                                </div>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Navigation */}
+        <div className="flex justify-between items-center mt-8">
+          <button
+            onClick={() => setActiveDay(Math.max(0, activeDay - 1))}
+            disabled={activeDay === 0}
+            className="flex items-center gap-2 px-6 py-3 text-sm font-medium text-gray-600 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors rounded-lg border border-gray-200 hover:bg-gray-50"
+          >
+            ← Previous
+          </button>
+
+          <div className="flex gap-2">
+            {days.map((_, index) => (
+              <div
+                key={index}
+                className={`w-3 h-3 rounded-full transition-all ${
+                  index === activeDay ? "bg-gray-900 scale-125" : "bg-gray-300"
+                }`}
+              />
+            ))}
+          </div>
+
+          {activeDay < days.length - 1 ? (
+            <button
+              onClick={() => setActiveDay(activeDay + 1)}
+              className="flex items-center gap-2 px-6 py-3 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors rounded-lg border border-gray-200 hover:bg-gray-50"
+            >
+              Next <ChevronRight className="w-4 h-4" />
+            </button>
+          ) : (
+            <button
+              onClick={handleSubmit}
+              disabled={!allowEdit || getProgress() !== 100}
+              className="flex items-center gap-2 px-8 py-3 bg-gray-900 text-white text-sm font-medium hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed rounded-lg shadow-sm"
+            >
+              Submit All <ChevronRight className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+
+        {/* Orders Overview */}
+        <div className="mt-16 space-y-12">
+          {/* Current Week */}
+          <div>
+            <div className="flex items-center gap-3 mb-6">
+              <span className="px-4 py-2 bg-emerald-100 text-emerald-700 text-sm font-semibold rounded-full">
+                Current Week
+              </span>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+              {days.map((day) => {
+                const m = currentWeekMeals[day] || {};
+                return (
+                  <div
+                    key={day}
+                    className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-all duration-200"
+                  >
+                    <h3 className="font-semibold text-gray-900 text-lg mb-4 pb-2 border-b border-gray-100">
+                      {day}
+                    </h3>
+                    {m.catering && (
+                      <div className="mb-3">
+                        <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
+                          Catering {m.catering}
+                        </span>
+                      </div>
+                    )}
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-medium text-gray-500">
+                          Main
+                        </span>
+                        <span className="text-sm text-gray-900 font-medium">
+                          {m.main || <span className="text-gray-400">—</span>}
+                        </span>
+                      </div>
+                      {m.catering === "1" && (
+                        <>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm font-medium text-gray-500">
+                              Salad 1
+                            </span>
+                            <span className="text-sm text-gray-900 font-medium">
+                              {m.salad1 || (
+                                <span className="text-gray-400">—</span>
+                              )}
+                            </span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm font-medium text-gray-500">
+                              Salad 2
+                            </span>
+                            <span className="text-sm text-gray-900 font-medium">
+                              {m.salad2 || (
+                                <span className="text-gray-400">—</span>
+                              )}
+                            </span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm font-medium text-gray-500">
+                              Side 1
+                            </span>
+                            <span className="text-sm text-gray-900 font-medium">
+                              {m.side1 || (
+                                <span className="text-gray-400">—</span>
+                              )}
+                            </span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm font-medium text-gray-500">
+                              Side 2
+                            </span>
+                            <span className="text-sm text-gray-900 font-medium">
+                              {m.side2 || (
+                                <span className="text-gray-400">—</span>
+                              )}
+                            </span>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Next Week */}
+          <div>
+            <div className="flex items-center gap-3 mb-6">
+              <span className="px-4 py-2 bg-blue-100 text-blue-700 text-sm font-semibold rounded-full">
+                Next Week
+              </span>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+              {days.map((day) => {
+                const m = nextWeekMeals[day] || {};
+                return (
+                  <div
+                    key={day}
+                    className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-all duration-200"
+                  >
+                    <h3 className="font-semibold text-gray-900 text-lg mb-4 pb-2 border-b border-gray-100">
+                      {day}
+                    </h3>
+                    {m.catering && (
+                      <div className="mb-3">
+                        <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
+                          Catering {m.catering}
+                        </span>
+                      </div>
+                    )}
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-medium text-gray-500">
+                          Main
+                        </span>
+                        <span className="text-sm text-gray-900 font-medium">
+                          {m.main || <span className="text-gray-400">—</span>}
+                        </span>
+                      </div>
+                      {m.catering === "1" && (
+                        <>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm font-medium text-gray-500">
+                              Salad 1
+                            </span>
+                            <span className="text-sm text-gray-900 font-medium">
+                              {m.salad1 || (
+                                <span className="text-gray-400">—</span>
+                              )}
+                            </span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm font-medium text-gray-500">
+                              Salad 2
+                            </span>
+                            <span className="text-sm text-gray-900 font-medium">
+                              {m.salad2 || (
+                                <span className="text-gray-400">—</span>
+                              )}
+                            </span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm font-medium text-gray-500">
+                              Side 1
+                            </span>
+                            <span className="text-sm text-gray-900 font-medium">
+                              {m.side1 || (
+                                <span className="text-gray-400">—</span>
+                              )}
+                            </span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm font-medium text-gray-500">
+                              Side 2
+                            </span>
+                            <span className="text-sm text-gray-900 font-medium">
+                              {m.side2 || (
+                                <span className="text-gray-400">—</span>
+                              )}
+                            </span>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

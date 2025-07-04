@@ -19,6 +19,9 @@ app.use("/api/getUsers", getUsersRoutes);
 const inventoryRoutes = require("./routes/inventory");
 app.use("/api/inventory", inventoryRoutes);
 
+const mealsRoutes = require("./routes/meals");
+app.use("/api/meals", mealsRoutes);
+
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => {
