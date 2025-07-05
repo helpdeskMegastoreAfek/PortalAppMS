@@ -22,6 +22,13 @@ export default function EmployeePortal() {
       accent: "border-l-orange-400",
     },
     {
+      title: "Admin Meal Ordering",
+      description: "Manage daily meals for the workweek",
+      icon: <Utensils className="w-6 h-6" />,
+      link: "/adminMeal",
+      accent: "border-l-orange-400",
+    },
+    {
       title: "Box & Cooler Inventory",
       description: "Track boxes and coolers inventory",
       icon: <Package className="w-6 h-6" />,

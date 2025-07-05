@@ -1,7 +1,6 @@
 "use client";
-
 import { useState, useEffect } from "react";
-import { Check, ChevronRight, Circle } from "lucide-react";
+import { Check, ChevronRight, Circle, Menu, X } from "lucide-react";
 import Header from "../components/Header";
 import Sidebar from "../components/Sidebar";
 import toast, { Toaster } from "react-hot-toast";
@@ -33,26 +32,6 @@ function getWeekId(date = new Date()) {
   return `${d.getFullYear()}-W${week}`;
 }
 
-// Toast notification component
-const Toast = ({ message, type, onClose }) => (
-  <div
-    className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg ${
-      type === "success"
-        ? "bg-green-500 text-white"
-        : type === "error"
-        ? "bg-red-500 text-white"
-        : "bg-blue-500 text-white"
-    }`}
-  >
-    <div className="flex items-center justify-between">
-      <span>{message}</span>
-      <button onClick={onClose} className="ml-4 text-white hover:text-gray-200">
-        ×
-      </button>
-    </div>
-  </div>
-);
-
 export default function MealOrderingForm() {
   const [meals, setMeals] = useState(
     days.map((day) => ({
@@ -80,6 +59,7 @@ export default function MealOrderingForm() {
 
   const user = JSON.parse(localStorage.getItem("user"));
   const userId = user?._id;
+
   const handleChange = (day, field, value) => {
     if (!allowEdit) return;
 
@@ -161,12 +141,12 @@ export default function MealOrderingForm() {
           meals.map((meal) => [meal.day, { ...meal, week: nextWeekId }])
         ),
       }));
+      setShow(false);
     } catch (err) {
       toast.error("Server error: " + err.message);
     }
   };
 
-  //   console.log("userId:", userId);
   useEffect(() => {
     const userObj = JSON.parse(localStorage.getItem("user"));
     const userId = userObj?._id;
@@ -176,12 +156,10 @@ export default function MealOrderingForm() {
       try {
         const res = await fetch(`http://localhost:5000/api/meals/${userId}`);
         const data = await res.json();
-
         const structured = {};
 
         data.forEach((entry) => {
           const weekId = entry.week || entry.weekId;
-
           if (entry.meals && Array.isArray(entry.meals)) {
             entry.meals.forEach((meal) => {
               if (!structured[weekId]) structured[weekId] = {};
@@ -202,101 +180,84 @@ export default function MealOrderingForm() {
     fetchOrders();
   }, []);
 
-  if (!show)
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="bg-white border border-gray-200 p-8 max-w-sm text-center rounded-lg shadow-sm">
-          <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Check className="w-6 h-6 text-white" />
-          </div>
-          <h2 className="text-xl font-medium text-gray-900 mb-2">Complete</h2>
-          <p className="text-gray-600 mb-6">Weekly meal plan submitted</p>
-          <button
-            onClick={() => setShow(true)}
-            className="w-full py-2 bg-gray-900 text-white text-sm hover:bg-gray-800 transition-colors rounded"
-          >
-            New Plan
-          </button>
-        </div>
-      </div>
-    );
-
   return (
     <div className="min-h-screen bg-gray-50">
       <Header user={user} />
       <Sidebar user={user} />
       <Toaster position="top-center" />
 
-      <div className="max-w-6xl mx-auto p-6">
+      <div className="max-w-6xl mx-auto p-4 sm:p-6 lg:ml-64">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 sm:mb-8 gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Meal Planner</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+              Meal Planner
+            </h1>
             <p className="text-gray-600 mt-1">Configure meals for next week</p>
           </div>
           <div className="flex items-center gap-4">
-            <div className="text-right">
+            <div className="text-center sm:text-right">
               <div className="text-sm text-gray-500">Progress</div>
-              <div className="text-2xl font-bold text-gray-900">
+              <div className="text-xl sm:text-2xl font-bold text-gray-900">
                 {getProgress()}%
               </div>
             </div>
-            <div className="w-16 h-16 border-2 border-gray-200 rounded-full flex items-center justify-center">
-              <div className="text-lg font-bold text-gray-600">
+            <div className="w-12 h-12 sm:w-16 sm:h-16 border-2 border-gray-200 rounded-full flex items-center justify-center">
+              <div className="text-sm sm:text-lg font-bold text-gray-600">
                 {activeDay + 1}/5
               </div>
             </div>
           </div>
         </div>
-
-        {/* Day Navigation */}
-        <div className="flex gap-2 mb-8 bg-white border border-gray-200 p-2 rounded-lg shadow-sm">
-          {days.map((day, index) => {
-            const isComplete = isDayComplete(meals[index]);
-            return (
-              <button
-                key={day}
-                onClick={() => setActiveDay(index)}
-                className={`flex-1 py-4 px-6 text-sm font-medium transition-all relative rounded-md ${
-                  activeDay === index
-                    ? "bg-gray-900 text-white shadow-md"
-                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-                }`}
-              >
-                {isComplete && (
-                  <div className="absolute top-2 right-2 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
-                )}
-                <div className="font-semibold">{day}</div>
-                <div className="text-xs opacity-75 mt-1">
-                  {meals[index].catering
-                    ? `Catering ${meals[index].catering}`
-                    : "Not set"}
-                </div>
-              </button>
-            );
-          })}
+        {/* Day Navigation - Mobile Scrollable */}
+        <div className="mb-6 sm:mb-8">
+          <div className="flex gap-1 sm:gap-2 bg-white border border-gray-200 p-1 sm:p-2 rounded-lg shadow-sm overflow-x-auto">
+            {days.map((day, index) => {
+              const isComplete = isDayComplete(meals[index]);
+              return (
+                <button
+                  key={day}
+                  onClick={() => setActiveDay(index)}
+                  className={`flex-shrink-0 min-w-0 flex-1 py-3 sm:py-4 px-3 sm:px-6 text-xs sm:text-sm font-medium transition-all relative rounded-md ${
+                    activeDay === index
+                      ? "bg-gray-900 text-white shadow-md"
+                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                  }`}
+                >
+                  {isComplete && (
+                    <div className="absolute top-1 sm:top-2 right-1 sm:right-2 w-2 h-2 sm:w-3 sm:h-3 bg-green-500 rounded-full border-2 border-white"></div>
+                  )}
+                  <div className="font-semibold">{day}</div>
+                  <div className="text-xs opacity-75 mt-1 truncate">
+                    {meals[index].catering
+                      ? `Catering ${meals[index].catering}`
+                      : "Not set"}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
         </div>
-
         {/* Main Form */}
         <div className="bg-white border border-gray-200 rounded-lg shadow-sm">
-          <div className="border-b border-gray-200 px-6 py-4">
-            <h2 className="text-xl font-semibold text-gray-900">
+          <div className="border-b border-gray-200 px-4 sm:px-6 py-4">
+            <h2 className="text-lg sm:text-xl font-semibold text-gray-900">
               {days[activeDay]} - Meal Selection
             </h2>
           </div>
 
-          <div className="p-6">
+          <div className="p-4 sm:p-6">
             {/* Catering Selection */}
-            <div className="mb-8">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">
+            <div className="mb-6 sm:mb-8">
+              <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-4">
                 Select Catering Option
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4">
                 <button
                   onClick={() =>
                     handleChange(meals[activeDay].day, "catering", "1")
                   }
-                  className={`p-6 border-2 rounded-lg text-left transition-all ${
+                  className={`p-4 sm:p-6 border-2 rounded-lg text-left transition-all ${
                     meals[activeDay].catering === "1"
                       ? "border-gray-900 bg-gray-50"
                       : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
@@ -319,7 +280,7 @@ export default function MealOrderingForm() {
                   onClick={() =>
                     handleChange(meals[activeDay].day, "catering", "2")
                   }
-                  className={`p-6 border-2 rounded-lg text-left transition-all ${
+                  className={`p-4 sm:p-6 border-2 rounded-lg text-left transition-all ${
                     meals[activeDay].catering === "2"
                       ? "border-gray-900 bg-gray-50"
                       : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
@@ -341,99 +302,104 @@ export default function MealOrderingForm() {
             </div>
 
             {/* Meal Selection */}
+
             {meals[activeDay].catering && (
-              <div className="space-y-8">
-                <h3 className="text-lg font-medium text-gray-900">
+              <div className="space-y-6 sm:space-y-8">
+                <h3 className="text-base sm:text-lg font-medium text-gray-900">
                   Select Your Meals
                 </h3>
+                {show && (
+                  <div className="space-y-6 sm:space-y-8">
+                    {categories.map((category) => {
+                      // Show all categories for catering 1, only main for catering 2
+                      if (
+                        meals[activeDay].catering === "2" &&
+                        category.key !== "main"
+                      ) {
+                        return null;
+                      }
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                  {categories.map((category) => {
-                    // Show all categories for catering 1, only main for catering 2
-                    if (
-                      meals[activeDay].catering === "2" &&
-                      category.key !== "main"
-                    ) {
-                      return null;
-                    }
-
-                    return (
-                      <div key={category.key} className="space-y-4">
-                        <div className="flex items-center justify-between">
-                          <label className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
-                            {category.label}
-                          </label>
-                          <div className="text-xs text-gray-400 font-mono bg-gray-100 px-2 py-1 rounded">
-                            {meals[activeDay][category.key]
-                              ? "SELECTED"
-                              : "PENDING"}
+                      return (
+                        <div
+                          key={category.key}
+                          className="space-y-3 sm:space-y-4"
+                        >
+                          <div className="flex items-center justify-between">
+                            <label className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
+                              {category.label}
+                            </label>
+                            <div className="text-xs text-gray-400 font-mono bg-gray-100 px-2 py-1 rounded">
+                              {meals[activeDay][category.key]
+                                ? "SELECTED"
+                                : "PENDING"}
+                            </div>
                           </div>
-                        </div>
 
-                        <div className="space-y-2">
-                          {options[category.key].map((option) => {
-                            const isSelected =
-                              meals[activeDay][category.key] === option;
-                            return (
-                              <button
-                                key={option}
-                                onClick={() =>
-                                  handleChange(
-                                    meals[activeDay].day,
-                                    category.key,
-                                    option
-                                  )
-                                }
-                                className={`w-full flex items-center justify-between p-4 border-2 rounded-lg text-left text-sm transition-all ${
-                                  isSelected
-                                    ? "border-gray-900 bg-gray-50 shadow-sm"
-                                    : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
-                                }`}
-                              >
-                                <span
-                                  className={`font-medium ${
+                          <div className="space-y-2">
+                            {options[category.key].map((option) => {
+                              const isSelected =
+                                meals[activeDay][category.key] === option;
+                              return (
+                                <button
+                                  key={option}
+                                  onClick={() =>
+                                    handleChange(
+                                      meals[activeDay].day,
+                                      category.key,
+                                      option
+                                    )
+                                  }
+                                  className={`w-full flex items-center justify-between p-3 sm:p-4 border-2 rounded-lg text-left text-sm transition-all ${
                                     isSelected
-                                      ? "text-gray-900"
-                                      : "text-gray-600"
+                                      ? "border-gray-900 bg-gray-50 shadow-sm"
+                                      : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
                                   }`}
                                 >
-                                  {option}
-                                </span>
-                                <div className="flex items-center gap-2">
-                                  {isSelected ? (
-                                    <Check className="w-5 h-5 text-gray-900" />
-                                  ) : (
-                                    <Circle className="w-5 h-5 text-gray-300" />
-                                  )}
-                                </div>
-                              </button>
-                            );
-                          })}
+                                  <span
+                                    className={`font-medium ${
+                                      isSelected
+                                        ? "text-gray-900"
+                                        : "text-gray-600"
+                                    }`}
+                                  >
+                                    {option}
+                                  </span>
+                                  <div className="flex items-center gap-2">
+                                    {isSelected ? (
+                                      <Check className="w-4 h-4 sm:w-5 sm:h-5 text-gray-900" />
+                                    ) : (
+                                      <Circle className="w-4 h-4 sm:w-5 sm:h-5 text-gray-300" />
+                                    )}
+                                  </div>
+                                </button>
+                              );
+                            })}
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             )}
           </div>
         </div>
 
         {/* Navigation */}
-        <div className="flex justify-between items-center mt-8">
+        <div className="flex justify-between items-center mt-6 sm:mt-8 gap-4">
           <button
             onClick={() => setActiveDay(Math.max(0, activeDay - 1))}
             disabled={activeDay === 0}
-            className="flex items-center gap-2 px-6 py-3 text-sm font-medium text-gray-600 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors rounded-lg border border-gray-200 hover:bg-gray-50"
+            className="flex items-center gap-2 px-4 sm:px-6 py-2 sm:py-3 text-sm font-medium text-gray-600 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors rounded-lg border border-gray-200 hover:bg-gray-50"
           >
-            ← Previous
+            ← <span className="hidden sm:inline">Previous</span>
           </button>
 
-          <div className="flex gap-2">
+          <div className="flex gap-1 sm:gap-2">
             {days.map((_, index) => (
               <div
                 key={index}
-                className={`w-3 h-3 rounded-full transition-all ${
+                className={`w-2 h-2 sm:w-3 sm:h-3 rounded-full transition-all ${
                   index === activeDay ? "bg-gray-900 scale-125" : "bg-gray-300"
                 }`}
               />
@@ -443,39 +409,41 @@ export default function MealOrderingForm() {
           {activeDay < days.length - 1 ? (
             <button
               onClick={() => setActiveDay(activeDay + 1)}
-              className="flex items-center gap-2 px-6 py-3 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors rounded-lg border border-gray-200 hover:bg-gray-50"
+              className="flex items-center gap-2 px-4 sm:px-6 py-2 sm:py-3 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors rounded-lg border border-gray-200 hover:bg-gray-50"
             >
-              Next <ChevronRight className="w-4 h-4" />
+              <span className="hidden sm:inline">Next</span>{" "}
+              <ChevronRight className="w-4 h-4" />
             </button>
           ) : (
             <button
               onClick={handleSubmit}
               disabled={!allowEdit || getProgress() !== 100}
-              className="flex items-center gap-2 px-8 py-3 bg-gray-900 text-white text-sm font-medium hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed rounded-lg shadow-sm"
+              className="flex items-center gap-2 px-4 sm:px-8 py-2 sm:py-3 bg-gray-900 text-white text-sm font-medium hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed rounded-lg shadow-sm"
             >
-              Submit All <ChevronRight className="w-4 h-4" />
+              <span className="hidden sm:inline">Submit All</span>
+              <span className="sm:hidden">Submit</span>
+              <ChevronRight className="w-4 h-4" />
             </button>
           )}
         </div>
-
         {/* Orders Overview */}
-        <div className="mt-16 space-y-12">
+        <div className="mt-12 sm:mt-16 space-y-8 sm:space-y-12">
           {/* Current Week */}
           <div>
-            <div className="flex items-center gap-3 mb-6">
-              <span className="px-4 py-2 bg-emerald-100 text-emerald-700 text-sm font-semibold rounded-full">
+            <div className="flex items-center gap-3 mb-4 sm:mb-6">
+              <span className="px-3 sm:px-4 py-1 sm:py-2 bg-emerald-100 text-emerald-700 text-sm font-semibold rounded-full">
                 Current Week
               </span>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4">
               {days.map((day) => {
                 const m = currentWeekMeals[day] || {};
                 return (
                   <div
                     key={day}
-                    className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-all duration-200"
+                    className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6 hover:shadow-md transition-all duration-200"
                   >
-                    <h3 className="font-semibold text-gray-900 text-lg mb-4 pb-2 border-b border-gray-100">
+                    <h3 className="font-semibold text-gray-900 text-base sm:text-lg mb-3 sm:mb-4 pb-2 border-b border-gray-100">
                       {day}
                     </h3>
                     {m.catering && (
@@ -490,7 +458,7 @@ export default function MealOrderingForm() {
                         <span className="text-sm font-medium text-gray-500">
                           Main
                         </span>
-                        <span className="text-sm text-gray-900 font-medium">
+                        <span className="text-sm text-gray-900 font-medium truncate ml-2">
                           {m.main || <span className="text-gray-400">—</span>}
                         </span>
                       </div>
@@ -500,7 +468,7 @@ export default function MealOrderingForm() {
                             <span className="text-sm font-medium text-gray-500">
                               Salad 1
                             </span>
-                            <span className="text-sm text-gray-900 font-medium">
+                            <span className="text-sm text-gray-900 font-medium truncate ml-2">
                               {m.salad1 || (
                                 <span className="text-gray-400">—</span>
                               )}
@@ -510,7 +478,7 @@ export default function MealOrderingForm() {
                             <span className="text-sm font-medium text-gray-500">
                               Salad 2
                             </span>
-                            <span className="text-sm text-gray-900 font-medium">
+                            <span className="text-sm text-gray-900 font-medium truncate ml-2">
                               {m.salad2 || (
                                 <span className="text-gray-400">—</span>
                               )}
@@ -520,7 +488,7 @@ export default function MealOrderingForm() {
                             <span className="text-sm font-medium text-gray-500">
                               Side 1
                             </span>
-                            <span className="text-sm text-gray-900 font-medium">
+                            <span className="text-sm text-gray-900 font-medium truncate ml-2">
                               {m.side1 || (
                                 <span className="text-gray-400">—</span>
                               )}
@@ -530,7 +498,7 @@ export default function MealOrderingForm() {
                             <span className="text-sm font-medium text-gray-500">
                               Side 2
                             </span>
-                            <span className="text-sm text-gray-900 font-medium">
+                            <span className="text-sm text-gray-900 font-medium truncate ml-2">
                               {m.side2 || (
                                 <span className="text-gray-400">—</span>
                               )}
@@ -547,20 +515,20 @@ export default function MealOrderingForm() {
 
           {/* Next Week */}
           <div>
-            <div className="flex items-center gap-3 mb-6">
-              <span className="px-4 py-2 bg-blue-100 text-blue-700 text-sm font-semibold rounded-full">
+            <div className="flex items-center gap-3 mb-4 sm:mb-6">
+              <span className="px-3 sm:px-4 py-1 sm:py-2 bg-blue-100 text-blue-700 text-sm font-semibold rounded-full">
                 Next Week
               </span>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4">
               {days.map((day) => {
                 const m = nextWeekMeals[day] || {};
                 return (
                   <div
                     key={day}
-                    className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-all duration-200"
+                    className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6 hover:shadow-md transition-all duration-200"
                   >
-                    <h3 className="font-semibold text-gray-900 text-lg mb-4 pb-2 border-b border-gray-100">
+                    <h3 className="font-semibold text-gray-900 text-base sm:text-lg mb-3 sm:mb-4 pb-2 border-b border-gray-100">
                       {day}
                     </h3>
                     {m.catering && (
@@ -575,7 +543,7 @@ export default function MealOrderingForm() {
                         <span className="text-sm font-medium text-gray-500">
                           Main
                         </span>
-                        <span className="text-sm text-gray-900 font-medium">
+                        <span className="text-sm text-gray-900 font-medium truncate ml-2">
                           {m.main || <span className="text-gray-400">—</span>}
                         </span>
                       </div>
@@ -585,7 +553,7 @@ export default function MealOrderingForm() {
                             <span className="text-sm font-medium text-gray-500">
                               Salad 1
                             </span>
-                            <span className="text-sm text-gray-900 font-medium">
+                            <span className="text-sm text-gray-900 font-medium truncate ml-2">
                               {m.salad1 || (
                                 <span className="text-gray-400">—</span>
                               )}
@@ -595,7 +563,7 @@ export default function MealOrderingForm() {
                             <span className="text-sm font-medium text-gray-500">
                               Salad 2
                             </span>
-                            <span className="text-sm text-gray-900 font-medium">
+                            <span className="text-sm text-gray-900 font-medium truncate ml-2">
                               {m.salad2 || (
                                 <span className="text-gray-400">—</span>
                               )}
@@ -605,7 +573,7 @@ export default function MealOrderingForm() {
                             <span className="text-sm font-medium text-gray-500">
                               Side 1
                             </span>
-                            <span className="text-sm text-gray-900 font-medium">
+                            <span className="text-sm text-gray-900 font-medium truncate ml-2">
                               {m.side1 || (
                                 <span className="text-gray-400">—</span>
                               )}
@@ -615,7 +583,7 @@ export default function MealOrderingForm() {
                             <span className="text-sm font-medium text-gray-500">
                               Side 2
                             </span>
-                            <span className="text-sm text-gray-900 font-medium">
+                            <span className="text-sm text-gray-900 font-medium truncate ml-2">
                               {m.side2 || (
                                 <span className="text-gray-400">—</span>
                               )}
