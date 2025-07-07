@@ -4,6 +4,7 @@ const mongoose = require("mongoose");
 const mealSchema = new mongoose.Schema({
   userId: String,
   weekId: String,
+  username: { type: String, required: true },
   meals: [
     {
       day: String,
@@ -16,5 +17,4 @@ const mealSchema = new mongoose.Schema({
     },
   ],
 });
-
 module.exports = mongoose.model("Meal", mealSchema);

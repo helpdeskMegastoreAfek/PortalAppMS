@@ -115,6 +115,7 @@ export default function MealOrderingForm() {
     }
 
     try {
+
       const response = await fetch("http://localhost:5000/api/meals", {
         method: "POST",
         headers: {
@@ -123,9 +124,11 @@ export default function MealOrderingForm() {
         body: JSON.stringify({
           userId: userId,
           weekId: nextWeekId,
+          username: user.username,
           meals,
         }),
       });
+    
 
       if (!response.ok) {
         const error = await response.json();
