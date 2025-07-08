@@ -25,11 +25,21 @@ const categories = [
 
 function getWeekId(date = new Date()) {
   const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-  const day = d.getDay() || 7;
-  d.setDate(d.getDate() + 4 - day);
-  const yearStart = new Date(d.getFullYear(), 0, 1);
-  const week = Math.ceil(((d - yearStart) / 86400000 + 1) / 7);
-  return `${d.getFullYear()}-W${week}`;
+
+  const day = d.getDay();
+  const sunday = new Date(d);
+  sunday.setDate(d.getDate() - day);
+
+  const janFirst = new Date(sunday.getFullYear(), 0, 1);
+  const janFirstDay = janFirst.getDay();
+
+  const firstSunday = new Date(janFirst);
+  firstSunday.setDate(janFirst.getDate() - janFirstDay);
+
+  const diffDays = Math.floor((sunday - firstSunday) / (1000 * 60 * 60 * 24));
+  const weekNumber = Math.floor(diffDays / 7) + 1;
+
+  return `${sunday.getFullYear()}-W${String(weekNumber).padStart(2, "0")}`;
 }
 
 export default function MealOrderingForm() {
@@ -115,7 +125,6 @@ export default function MealOrderingForm() {
     }
 
     try {
-
       const response = await fetch("http://localhost:5000/api/meals", {
         method: "POST",
         headers: {
@@ -128,7 +137,6 @@ export default function MealOrderingForm() {
           meals,
         }),
       });
-    
 
       if (!response.ok) {
         const error = await response.json();
