@@ -1,36 +1,36 @@
-import { useState } from "react";
+import { useState } from 'react';
 
 export default function ChangePasswordModal({ onClose }) {
-  const user = JSON.parse(localStorage.getItem("user"));
+  const user = JSON.parse(localStorage.getItem('user'));
   const userId = user?._id;
 
-  const [oldPassword, setOldPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
+  const [oldPassword, setOldPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
   const [message, setMessage] = useState(null);
 
   const handleSubmit = async () => {
     if (!userId) {
-      setMessage("User not found. Please log in again.");
+      setMessage('User not found. Please log in again.');
       return;
     }
 
-    const res = await fetch("api/api/auth/changePassword", {
-      method: "PUT",
+    const res = await fetch('http://localhost:3000/api/auth/changePassword', {
+      method: 'PUT',
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({ userId, oldPassword, newPassword }),
     });
 
     const data = await res.json();
     if (data.success) {
-      setMessage("Password updated successfully");
+      setMessage('Password updated successfully');
       setTimeout(() => {
         setMessage(null);
         onClose();
       }, 1500);
     } else {
-      setMessage(data.error || "Failed to update password");
+      setMessage(data.error || 'Failed to update password');
     }
   };
 
@@ -43,9 +43,7 @@ export default function ChangePasswordModal({ onClose }) {
 
         <div className="p-6 space-y-4">
           <div>
-            <label className="block text-sm text-gray-700 mb-1">
-              Current Password
-            </label>
+            <label className="block text-sm text-gray-700 mb-1">Current Password</label>
             <input
               type="password"
               value={oldPassword}
@@ -55,9 +53,7 @@ export default function ChangePasswordModal({ onClose }) {
           </div>
 
           <div>
-            <label className="block text-sm text-gray-700 mb-1">
-              New Password
-            </label>
+            <label className="block text-sm text-gray-700 mb-1">New Password</label>
             <input
               type="password"
               value={newPassword}
@@ -69,9 +65,7 @@ export default function ChangePasswordModal({ onClose }) {
           {message && (
             <div
               className={`text-sm ${
-                message.includes("successfully")
-                  ? "text-green-600"
-                  : "text-red-600"
+                message.includes('successfully') ? 'text-green-600' : 'text-red-600'
               }`}
             >
               {message}

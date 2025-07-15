@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import {
   Menu,
   X,
@@ -12,27 +12,29 @@ import {
   ChevronsLeft,
   ChevronsRight,
   PackageOpen,
-} from "lucide-react";
+  File
+} from 'lucide-react';
 
 const appLinks = [
-  { label: "Main Board", path: "/", icon: <LayoutDashboard size={20} /> },
-  { label: "Meal Ordering", path: "/meal", icon: <Utensils size={20} /> },
+  { label: 'Main Board', path: '/', icon: <LayoutDashboard size={20} /> },
+  { label: 'Meal Ordering', path: '/meal', icon: <Utensils size={20} /> },
   {
-    label: "Box & Cooler Inventory",
-    path: "/boxes",
+    label: 'Box & Cooler Inventory',
+    path: '/boxes',
     icon: <Package size={20} />,
   },
   {
-    label: "Admin Box Inventory",
-    path: "/adminBox",
+    label: 'Admin Box Inventory',
+    path: '/adminBox',
     icon: <PackageOpen size={20} />,
   },
-  { label: "IT Support Tickets", path: "/it", icon: <Laptop2 size={20} /> },
-  { label: "Service Tickets", path: "/service", icon: <Wrench size={20} /> },
+  { label: 'IT Support Tickets', path: '/it', icon: <Laptop2 size={20} /> },
+  { label: 'Service Tickets', path: '/service', icon: <Wrench size={20} /> },
+  { label: 'Invoices', path: '/invoice', icon: <File size={20} /> },
 
   {
-    label: "Admin Panel",
-    path: "/admin",
+    label: 'Admin Panel',
+    path: '/admin',
     icon: <ShieldCheck size={20} />,
     adminOnly: true,
   },
@@ -44,18 +46,16 @@ const NavLink = ({ item, collapsed, location, onLinkClick }) => (
     to={item.path}
     onClick={onLinkClick}
     className={`group relative flex items-center py-2 px-3 text-sm transition-all rounded-md
-      ${collapsed ? "justify-center" : "gap-3"}
+      ${collapsed ? 'justify-center' : 'gap-3'}
       ${
         location.pathname === item.path
-          ? "bg-gray-100 text-gray-900 font-medium"
-          : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+          ? 'bg-gray-100 text-gray-900 font-medium'
+          : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
       }
     `}
   >
     <div className="shrink-0">{item.icon}</div>
-    {!collapsed && (
-      <span className="transition-opacity duration-300">{item.label}</span>
-    )}
+    {!collapsed && <span className="transition-opacity duration-300">{item.label}</span>}
 
     {/* Tooltip */}
     {collapsed && (
@@ -75,10 +75,10 @@ export default function Sidebar({ user }) {
   const regularLinks = appLinks.filter((app) => !app.adminOnly);
 
   const filteredRegularLinks = regularLinks.filter(
-    (app) => user?.role === "admin" || user?.allowedApps?.includes(app.path)
+    (app) => user?.role === 'admin' || user?.allowedApps?.includes(app.path)
   );
 
-  const shouldShowAdminLink = user?.role === "admin" && adminLink;
+  const shouldShowAdminLink = user?.role === 'admin' && adminLink;
 
   return (
     <>
@@ -93,9 +93,9 @@ export default function Sidebar({ user }) {
       {/* Sidebar */}
       <aside
         className={`fixed top-0 left-0 h-full bg-white border-r border-gray-200 z-40 transition-all duration-300  
-          ${open ? "translate-x-0" : "-translate-x-full"}  
+          ${open ? 'translate-x-0' : '-translate-x-full'}  
           md:translate-x-0  
-          ${collapsed ? "md:w-16" : "md:w-60"}  
+          ${collapsed ? 'md:w-16' : 'md:w-60'}  
           overflow-hidden px-4 pt-4 pb-4 mb:pt-6 flex flex-col justify-between`}
       >
         {/* Top (links and toggle) */}
@@ -106,16 +106,12 @@ export default function Sidebar({ user }) {
               onClick={() => setCollapsed(!collapsed)}
               className="text-gray-500 hover:text-gray-800 transition"
             >
-              {collapsed ? (
-                <ChevronsRight size={20} />
-              ) : (
-                <ChevronsLeft size={20} />
-              )}
+              {collapsed ? <ChevronsRight size={20} /> : <ChevronsLeft size={20} />}
             </button>
           </div>
 
           {/* Navigation links */}
-          <nav className={`space-y-1 ${collapsed ? "text-center" : ""}`}>
+          <nav className={`space-y-1 ${collapsed ? 'text-center' : ''}`}>
             {filteredRegularLinks.map((item) => (
               <NavLink
                 key={item.path}
@@ -130,7 +126,7 @@ export default function Sidebar({ user }) {
 
         {/* Bottom (admin link) */}
         {shouldShowAdminLink && (
-          <nav className={`pt-4 border-t ${collapsed ? "text-center" : ""}`}>
+          <nav className={`pt-4 border-t ${collapsed ? 'text-center' : ''}`}>
             <NavLink
               item={adminLink}
               collapsed={collapsed}
@@ -143,10 +139,7 @@ export default function Sidebar({ user }) {
 
       {/* Overlay for mobile */}
       {open && (
-        <div
-          className="md:hidden fixed inset-0 bg-black/10 z-30"
-          onClick={() => setOpen(false)}
-        />
+        <div className="md:hidden fixed inset-0 bg-black/10 z-30" onClick={() => setOpen(false)} />
       )}
     </>
   );

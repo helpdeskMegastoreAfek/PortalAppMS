@@ -1,4 +1,4 @@
-import Header from "../components/Header";
+import Header from '../components/Header';
 import {
   Utensils,
   Package,
@@ -8,74 +8,74 @@ import {
   ArrowRight,
   PackageOpen,
   File,
-} from "lucide-react";
+} from 'lucide-react';
 
 export default function EmployeePortal() {
-  const user = JSON.parse(localStorage.getItem("user"));
+  const user = JSON.parse(localStorage.getItem('user'));
 
   const apps = [
     {
-      title: "Meal Ordering",
-      description: "Order your daily meals for the workweek",
+      title: 'Meal Ordering',
+      description: 'Order your daily meals for the workweek',
       icon: <Utensils className="w-6 h-6" />,
-      link: "/meal",
-      accent: "border-l-orange-400",
+      link: '/meal',
+      accent: 'border-l-orange-400',
     },
     {
-      title: "Admin Meal Ordering",
-      description: "Manage daily meals for the workweek",
+      title: 'Admin Meal Ordering',
+      description: 'Manage daily meals for the workweek',
       icon: <Utensils className="w-6 h-6" />,
-      link: "/adminMeal",
-      accent: "border-l-orange-400",
+      link: '/adminMeal',
+      accent: 'border-l-orange-400',
     },
     {
-      title: "Box & Cooler Inventory",
-      description: "Track boxes and coolers inventory",
+      title: 'Box & Cooler Inventory',
+      description: 'Track boxes and coolers inventory',
       icon: <Package className="w-6 h-6" />,
-      link: "/boxes",
-      accent: "border-l-blue-400",
+      link: '/boxes',
+      accent: 'border-l-blue-400',
     },
     {
-      title: "Admin Panel Box Inventory",
-      description: "Add and manage Box Inventory",
+      title: 'Admin Panel Box Inventory',
+      description: 'Add and manage Box Inventory',
       icon: <PackageOpen className="w-6 h-6" />,
-      link: "/adminBox",
-      accent: "border-l-blue-400",
+      link: '/adminBox',
+      accent: 'border-l-blue-400',
     },
     {
-      title: "IT Support Tickets",
-      description: "Submit and track IT support requests",
+      title: 'IT Support Tickets',
+      description: 'Submit and track IT support requests',
       icon: <Laptop2 className="w-6 h-6" />,
-      link: "/it",
-      accent: "border-l-green-400",
+      link: '/it',
+      accent: 'border-l-green-400',
     },
     {
-      title: "Service Tickets",
-      description: "Submit and track service requests",
+      title: 'Service Tickets',
+      description: 'Submit and track service requests',
       icon: <Wrench className="w-6 h-6" />,
-      link: "/service",
-      accent: "border-l-purple-400",
+      link: '/service',
+      accent: 'border-l-purple-400',
     },
     {
-      title: "Invoices",
-      description: "Management data of invoices ",
+      title: 'Invoices',
+      description: 'Management data of invoices ',
       icon: <File className="w-6 h-6" />,
-      link: "/invoice",
-      accent: "border-l-yellow-400",
+      link: '/invoice',
+      accent: 'border-l-yellow-400',
     },
     {
-      title: "Admin Panel",
-      description: "Add and manage user access",
+      title: 'Admin Panel',
+      description: 'Add and manage user access',
       icon: <ShieldCheck className="w-6 h-6" />,
-      link: "/admin",
-      accent: "border-l-red-400",
+      link: '/admin',
+      accent: 'border-l-red-400',
       adminOnly: true,
     },
   ];
 
   const filteredApps = apps.filter((app) => {
-    if (app.adminOnly && user?.role !== "admin") return false;
-    return user?.role === "admin" || user?.allowedApps?.includes(app.link);
+    if (app.adminOnly && user?.role !== 'admin') return false;
+    return user?.role === 'admin' || user?.allowedApps?.includes(app.link);
   });
 
   return (
@@ -88,8 +88,7 @@ export default function EmployeePortal() {
             Welcome back, <span className="font-medium">{user?.username}</span>
           </h1>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Choose from your available applications to get started with your
-            daily tasks
+            Choose from your available applications to get started with your daily tasks
           </p>
         </div>
 
@@ -116,9 +115,7 @@ export default function EmployeePortal() {
                     <h3 className="text-xl font-medium text-gray-900 group-hover:text-gray-700 transition-colors">
                       {app.title}
                     </h3>
-                    <p className="text-gray-600 leading-relaxed">
-                      {app.description}
-                    </p>
+                    <p className="text-gray-600 leading-relaxed">{app.description}</p>
                   </div>
 
                   <div className="mt-6 pt-4 border-t border-gray-100">
@@ -137,9 +134,7 @@ export default function EmployeePortal() {
             <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <Package className="w-8 h-8 text-gray-400" />
             </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
-              No applications available
-            </h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No applications available</h3>
             <p className="text-gray-600">
               Contact your administrator to request access to applications.
             </p>

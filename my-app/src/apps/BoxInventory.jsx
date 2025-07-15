@@ -1,39 +1,39 @@
-"use client";
-import toast, { Toaster } from "react-hot-toast";
-import { useState } from "react";
-import Header from "../components/Header";
-import Sidebar from "../components/Sidebar";
-import { Package, Thermometer, Plus, Minus, Save } from "lucide-react";
+'use client';
+import toast, { Toaster } from 'react-hot-toast';
+import { useState } from 'react';
+import Header from '../components/Header';
+import Sidebar from '../components/Sidebar';
+import { Package, Thermometer, Plus, Minus, Save } from 'lucide-react';
 
 const inventoryItems = [
   {
-    id: "boxes",
-    name: "Boxes",
+    id: 'boxes',
+    name: 'Boxes',
     icon: <Package className="w-6 h-6" />,
-    color: "from-blue-400 to-blue-600",
+    color: 'from-blue-400 to-blue-600',
   },
   {
-    id: "largeCoolers",
-    name: "Large Coolers",
+    id: 'largeCoolers',
+    name: 'Large Coolers',
     icon: <Thermometer className="w-6 h-6" />,
-    color: "from-green-400 to-green-600",
+    color: 'from-green-400 to-green-600',
   },
   {
-    id: "smallCoolers",
-    name: "Small Coolers",
+    id: 'smallCoolers',
+    name: 'Small Coolers',
     icon: <Thermometer className="w-6 h-6" />,
-    color: "from-purple-400 to-purple-600",
+    color: 'from-purple-400 to-purple-600',
   },
 ];
 export default function BoxInventory() {
-  const user = JSON.parse(localStorage.getItem("user"));
+  const user = JSON.parse(localStorage.getItem('user'));
   const [inventory, setInventory] = useState({
     boxes: 0,
     largeCoolers: 0,
     smallCoolers: 0,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [driverName, setDriverName] = useState("");
+  const [driverName, setDriverName] = useState('');
 
   const updateInventory = (id, value) => {
     setInventory((prev) => ({
@@ -53,21 +53,21 @@ export default function BoxInventory() {
     setIsSubmitting(true);
 
     await toast.promise(
-      fetch("http://localhost:5000/api/inventory", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      fetch('http://localhost:3000/api/inventory', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...inventory,
           username: user.username,
           driverName: driverName,
         }),
       }).then((res) => {
-        if (!res.ok) throw new Error("Failed to send data");
+        if (!res.ok) throw new Error('Failed to send data');
         return res.json();
       }),
       {
-        loading: "Sending...",
-        success: "Send successfully!",
+        loading: 'Sending...',
+        success: 'Send successfully!',
         error: "This didn't work.",
       }
     );
@@ -77,7 +77,7 @@ export default function BoxInventory() {
       largeCoolers: 0,
       smallCoolers: 0,
     });
-    setDriverName("");
+    setDriverName('');
     setIsSubmitting(false);
   };
 
@@ -91,12 +91,8 @@ export default function BoxInventory() {
           <div className="max-w-2xl mx-auto">
             {/* Header */}
             <div className="mb-12">
-              <h1 className="text-3xl font-light text-gray-900 mb-2">
-                Box & Cooler Inventory
-              </h1>
-              <p className="text-gray-600">
-                Update your current inventory counts
-              </p>
+              <h1 className="text-3xl font-light text-gray-900 mb-2">Box & Cooler Inventory</h1>
+              <p className="text-gray-600">Update your current inventory counts</p>
             </div>
             <Toaster position="top-center" />
             {/* Inventory Form */}
@@ -130,9 +126,7 @@ export default function BoxInventory() {
                       >
                         {item.icon}
                       </div>
-                      <h3 className="text-lg font-medium text-gray-900">
-                        {item.name}
-                      </h3>
+                      <h3 className="text-lg font-medium text-gray-900">{item.name}</h3>
                     </div>
 
                     <div className="flex items-center gap-4">
@@ -148,9 +142,7 @@ export default function BoxInventory() {
                         type="number"
                         min="0"
                         value={inventory[item.id]}
-                        onChange={(e) =>
-                          updateInventory(item.id, e.target.value)
-                        }
+                        onChange={(e) => updateInventory(item.id, e.target.value)}
                         className="flex-1 px-4 py-3 border border-gray-300 text-center text-xl font-medium focus:outline-none focus:border-gray-500"
                       />
 
@@ -172,12 +164,12 @@ export default function BoxInventory() {
                   disabled={isSubmitting}
                   className={`flex items-center justify-center gap-2 w-full py-3 text-sm transition-all ${
                     isSubmitting
-                      ? "bg-gray-400 text-white cursor-not-allowed"
-                      : "bg-gray-900 text-white hover:bg-gray-800"
+                      ? 'bg-gray-400 text-white cursor-not-allowed'
+                      : 'bg-gray-900 text-white hover:bg-gray-800'
                   }`}
                 >
                   <Save className="w-4 h-4" />
-                  {isSubmitting ? "Saving..." : "Save"}
+                  {isSubmitting ? 'Saving...' : 'Save'}
                 </button>
               </div>
             </div>

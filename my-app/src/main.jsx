@@ -1,19 +1,20 @@
-import React from "react";
-import ReactDOM from "react-dom/client";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import EmployeePortal from "./apps/mainbord";
-import MealOrdering from "./apps/MealOrdering";
-import BoxInventory from "./apps/BoxInventory";
-import ITSupport from "./apps/ITSupport";
-import Service from "./apps/ServiceTickets";
-import Login from "./pages/Login";
-import AdminPanel from "./apps/AdminPanel";
-import AdminBoxInventory from "./apps/AdminBoxInventory";
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import EmployeePortal from './apps/mainbord';
+import MealOrdering from './apps/MealOrdering';
+import BoxInventory from './apps/BoxInventory';
+import ITSupport from './apps/ITSupport';
+import Service from './apps/ServiceTickets';
+import Login from './pages/Login';
+import AdminPanel from './apps/AdminPanel';
+import AdminBoxInventory from './apps/AdminBoxInventory';
+import Invoice from './apps/invoice';
 // import AdminMealOrdering from "./apps/AdminMealOrdering";
 
-import "./index.css";
+import './index.css';
 
-ReactDOM.createRoot(document.getElementById("root")).render(
+ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <BrowserRouter>
       <Routes>
@@ -25,6 +26,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
         <Route path="/service" element={<Service />} />
         <Route path="/adminBox" element={<AdminBoxInventory />} />
         <Route path="/admin" element={<AdminPanel />} />
+        <Route path="/invoice" element={<Invoice />} />
         {/* <Route path="/adminMeal" element={<AdminMealOrdering />} /> */}
       </Routes>
     </BrowserRouter>

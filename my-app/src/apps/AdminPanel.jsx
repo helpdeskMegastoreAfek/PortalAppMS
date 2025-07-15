@@ -1,39 +1,44 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { Button } from "../components/ui/Button";
-import UserManager from "../components/UserManager";
-import { ChevronsDown, ChevronsUp } from "lucide-react";
-import Header from "../components/Header";
-import Sidebar from "../components/Sidebar";
-import toast, { Toaster } from "react-hot-toast";
+import { useState } from 'react';
+import { Button } from '../components/ui/Button';
+import UserManager from '../components/UserManager';
+import { ChevronsDown, ChevronsUp } from 'lucide-react';
+import Header from '../components/Header';
+import Sidebar from '../components/Sidebar';
+import toast, { Toaster } from 'react-hot-toast';
 
 export default function AdminPanel() {
-  const [username, setUsername] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [role, setRole] = useState("user");
-  const [status, setStatus] = useState("Active");
-  const [orgUnit, setOrgUnit] = useState("");
+  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [role, setRole] = useState('user');
+  const [status, setStatus] = useState('Active');
+  const [orgUnit, setOrgUnit] = useState('');
   const [allowedApps, setAllowedApps] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [reloadUsers, setReloadUsers] = useState(0); // refresh trigger
+  const [permissions, setPermissions] = useState({
+    viewFinancials: false,
+    editInvoices: false,
+  });
 
-  const user = JSON.parse(localStorage.getItem("user"));
-  if (user?.role !== "admin") {
-    window.location.href = "/";
+
+  const user = JSON.parse(localStorage.getItem('user'));
+  if (user?.role !== 'admin') {
+    window.location.href = '/';
     return null;
   }
 
   const appOptions = [
-    { label: "Main Board (sidebar)", value: "/" },
-    { label: "Meal Ordering", value: "/meal" },
-    { label: "Box & Cooler Inventory", value: "/boxes" },
-    { label: "IT Support Tickets", value: "/it" },
-    { label: "Service Tickets", value: "/service" },
-    { label: "Admin Box Inventory", value: "/adminBox" },
-    { label: "Invoice Panel", value: "/invoice" },
-    { label: "Admin Panel", value: "/admin" },
+    { label: 'Main Board (sidebar)', value: '/' },
+    { label: 'Meal Ordering', value: '/meal' },
+    { label: 'Box & Cooler Inventory', value: '/boxes' },
+    { label: 'IT Support Tickets', value: '/it' },
+    { label: 'Service Tickets', value: '/service' },
+    { label: 'Admin Box Inventory', value: '/adminBox' },
+    { label: 'Invoice Panel', value: '/invoice' },
+    { label: 'Admin Panel', value: '/admin' },
   ];
 
   const toggleApp = (value) => {
@@ -42,47 +47,59 @@ export default function AdminPanel() {
     );
   };
 
+  const handlePermissionChange = (e) => {
+    const { name, checked } = e.target;
+    setPermissions(prev => ({ ...prev, [name]: checked }));
+  };
+
   const handleSubmit = async () => {
     if (!username || !password || !email) {
-      toast.error("Please fill all required fields.");
+      toast.error('Please fill all required fields.');
       return;
     }
 
+    const permissionLoad = {
+    username,
+    password,
+    email,
+    role,
+    status,
+    orgUnit,
+    allowedApps,
+    permissions, 
+  };
+
+   console.log('Sending this payload to server:', permissionLoad);
+
     toast.promise(
-      fetch("api/api/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          username,
-          password,
-          email,
-          role,
-          status,
-          orgUnit,
-          allowedApps,
-        }),
+      fetch('http://localhost:3000/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(permissionLoad),
       }).then(async (res) => {
         const data = await res.json();
-        if (!res.ok) throw new Error(data.message || "Unknown error");
+        if (!res.ok) throw new Error(data.message || 'Unknown error');
 
-        setUsername("");
-        setPassword("");
-        setEmail("");
-        setOrgUnit("");
-        setRole("user");
-        setStatus("Active");
+        setUsername('');
+        setPassword('');
+        setEmail('');
+        setOrgUnit('');
+        setRole('user');
+        setStatus('Active');
         setAllowedApps([]);
         setShowForm(false);
         setReloadUsers((prev) => prev + 1);
-        return "User created successfully!";
+        setPermissions({})
+        return 'User created successfully!';
       }),
       {
-        loading: "Creating user...",
+        loading: 'Creating user...',
         success: (msg) => msg,
         error: (err) => `Error: ${err.message}`,
       }
     );
   };
+
 
   return (
     <div className="min-h-screen bg-white">
@@ -93,9 +110,7 @@ export default function AdminPanel() {
       <div className="max-w-10/12 mx-auto px-6 p-6">
         {/* Header */}
         <div className="mb-12">
-          <h1 className="text-3xl font-light text-gray-900 mb-2">
-            Admin Panel
-          </h1>
+          <h1 className="text-3xl font-light text-gray-900 mb-2">Admin Panel</h1>
         </div>
 
         {/* Toggle Button */}
@@ -104,12 +119,12 @@ export default function AdminPanel() {
             onClick={() => setShowForm(!showForm)}
             className={`flex items-center gap-2 px-4 py-2 text-sm border transition-colors ${
               showForm
-                ? "bg-gray-900 text-white border-gray-900"
-                : "bg-white text-gray-900 border-gray-300 hover:border-gray-400"
+                ? 'bg-gray-900 text-white border-gray-900'
+                : 'bg-white text-gray-900 border-gray-300 hover:border-gray-400'
             }`}
           >
             {showForm ? <ChevronsUp size={16} /> : <ChevronsDown size={16} />}
-            {showForm ? "Hide Form" : "Add User"}
+            {showForm ? 'Hide Form' : 'Add User'}
           </Button>
         </div>
 
@@ -117,18 +132,14 @@ export default function AdminPanel() {
         {showForm && (
           <div className="mb-12 border border-gray-200 bg-gray-50">
             <div className="border-b border-gray-200 px-6 py-4">
-              <h2 className="text-lg font-medium text-gray-900">
-                Add New User
-              </h2>
+              <h2 className="text-lg font-medium text-gray-900">Add New User</h2>
             </div>
 
             <div className="p-6 space-y-6">
               {/* Basic Info */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm text-gray-700 mb-1">
-                    Username *
-                  </label>
+                  <label className="block text-sm text-gray-700 mb-1">Username *</label>
                   <input
                     type="text"
                     value={username}
@@ -138,9 +149,7 @@ export default function AdminPanel() {
                 </div>
 
                 <div>
-                  <label className="block text-sm text-gray-700 mb-1">
-                    Email *
-                  </label>
+                  <label className="block text-sm text-gray-700 mb-1">Email *</label>
                   <input
                     type="email"
                     value={email}
@@ -151,9 +160,7 @@ export default function AdminPanel() {
               </div>
 
               <div>
-                <label className="block text-sm text-gray-700 mb-1">
-                  Password *
-                </label>
+                <label className="block text-sm text-gray-700 mb-1">Password *</label>
                 <input
                   type="password"
                   value={password}
@@ -165,9 +172,7 @@ export default function AdminPanel() {
               {/* Role and Status */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm text-gray-700 mb-1">
-                    Role
-                  </label>
+                  <label className="block text-sm text-gray-700 mb-1">Role</label>
                   <select
                     value={role}
                     onChange={(e) => setRole(e.target.value)}
@@ -179,9 +184,7 @@ export default function AdminPanel() {
                 </div>
 
                 <div>
-                  <label className="block text-sm text-gray-700 mb-1">
-                    Status
-                  </label>
+                  <label className="block text-sm text-gray-700 mb-1">Status</label>
                   <select
                     value={status}
                     onChange={(e) => setStatus(e.target.value)}
@@ -194,9 +197,7 @@ export default function AdminPanel() {
               </div>
 
               <div>
-                <label className="block text-sm text-gray-700 mb-1">
-                  Organization Unit
-                </label>
+                <label className="block text-sm text-gray-700 mb-1">Organization Unit</label>
                 <input
                   type="text"
                   value={orgUnit}
@@ -208,15 +209,10 @@ export default function AdminPanel() {
 
               {/* Applications */}
               <div>
-                <label className="block text-sm text-gray-700 mb-3">
-                  Allowed Applications
-                </label>
+                <label className="block text-sm text-gray-700 mb-3">Allowed Applications</label>
                 <div className="space-y-2">
                   {appOptions.map((app) => (
-                    <label
-                      key={app.value}
-                      className="flex items-center gap-2 text-sm"
-                    >
+                    <label key={app.value} className="flex items-center gap-2 text-sm">
                       <input
                         type="checkbox"
                         checked={allowedApps.includes(app.value)}
@@ -228,6 +224,22 @@ export default function AdminPanel() {
                   ))}
                 </div>
               </div>
+
+              {allowedApps.includes('/invoice') && (
+                <div className="p-4 pt-6 border-t border-gray-200">
+                  <h3 className="text-sm font-medium text-gray-800 mb-3">Invoice Panel Permissions</h3>
+                  <div className="space-y-2">
+                    <label className="flex items-center gap-2 text-sm">
+                      <input type="checkbox" name="viewFinancials" checked={permissions.viewFinancials} onChange={handlePermissionChange} className="w-4 h-4" />
+                      <span className="text-gray-700">Can view financial summary</span>
+                    </label>
+                    <label className="flex items-center gap-2 text-sm">
+                      <input type="checkbox" name="editInvoices" checked={permissions.editInvoices} onChange={handlePermissionChange} className="w-4 h-4" />
+                      <span className="text-gray-700">Can edit invoices</span>
+                    </label>
+                  </div>
+                </div>
+              )}
 
               <div className="pt-4 border-t border-gray-200">
                 <Button
@@ -244,12 +256,10 @@ export default function AdminPanel() {
         {/* User Management */}
         <div className="border border-gray-200">
           <div className="border-b border-gray-200 px-6 py-4">
-            <h2 className="text-lg font-medium text-gray-900">
-              User Management
-            </h2>
+            <h2 className="text-lg font-medium text-gray-900">User Management</h2>
           </div>
           <div>
-            <UserManager refreshTrigger={reloadUsers} appOptions={appOptions} />
+            <UserManager loggedInUser={user} refreshTrigger={reloadUsers} appOptions={appOptions}  />
           </div>
         </div>
       </div>

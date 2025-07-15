@@ -1,48 +1,41 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import toast from "react-hot-toast";
-import Header from "../components/Header";
-import Sidebar from "../components/Sidebar";
-import {
-  Package,
-  Thermometer,
-  TrendingUp,
-  TrendingDown,
-  Users,
-  Download,
-} from "lucide-react";
+import { useEffect, useState } from 'react';
+import toast from 'react-hot-toast';
+import Header from '../components/Header';
+import Sidebar from '../components/Sidebar';
+import { Package, Thermometer, TrendingUp, TrendingDown, Users, Download } from 'lucide-react';
 
 export default function AdminBoxInventory() {
-  const user = JSON.parse(localStorage.getItem("user"));
-  const [filterUser, setFilterUser] = useState("all");
+  const user = JSON.parse(localStorage.getItem('user'));
+  const [filterUser, setFilterUser] = useState('all');
   const [inventoryData, setInventoryData] = useState([]);
 
   useEffect(() => {
     const fetchInventory = async () => {
       try {
-        const res = await fetch("api/api/inventory");
+        const res = await fetch('http://localhost:3000/api/inventory');
         const data = await res.json();
 
         const formatted = data.map((item) => ({
           id: item._id,
-          user: item.username || "Unknown",
+          user: item.username || 'Unknown',
           role: item.role,
           boxes: item.boxes,
           largeCoolers: item.largeCoolers,
           smallCoolers: item.smallCoolers,
-          driverName: item.driverName || "-",
+          driverName: item.driverName || '-',
           lastUpdated: new Date(item.updatedAt)
-            .toLocaleString("sv-SE")
-            .replace("T", " ")
+            .toLocaleString('sv-SE')
+            .replace('T', ' ')
             .slice(0, 16),
           totalItems: item.boxes + item.largeCoolers + item.smallCoolers,
         }));
 
         setInventoryData(formatted);
       } catch (err) {
-        console.error("Failed to fetch inventory:", err);
-        toast.error("Failed to load inventory data");
+        console.error('Failed to fetch inventory:', err);
+        toast.error('Failed to load inventory data');
       }
     };
 
@@ -60,19 +53,19 @@ export default function AdminBoxInventory() {
   );
 
   const filteredData = inventoryData.filter(
-    (item) => filterUser === "all" || item.user === filterUser
+    (item) => filterUser === 'all' || item.user === filterUser
   );
 
   const exportData = () => {
     const headers = [
-      "User",
-      "Role",
-      "Boxes",
-      "Large Coolers",
-      "Small Coolers",
-      "Total Items",
-      "Driver Name",
-      "Last Updated",
+      'User',
+      'Role',
+      'Boxes',
+      'Large Coolers',
+      'Small Coolers',
+      'Total Items',
+      'Driver Name',
+      'Last Updated',
     ];
     const rows = inventoryData.map((item) => [
       item.user,
@@ -85,12 +78,12 @@ export default function AdminBoxInventory() {
       item.lastUpdated,
     ]);
 
-    const csvContent = [headers, ...rows].map((e) => e.join(",")).join("\n");
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const csvContent = [headers, ...rows].map((e) => e.join(',')).join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", "inventory_report.csv");
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'inventory_report.csv');
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -105,9 +98,7 @@ export default function AdminBoxInventory() {
           <div className="max-w-7xl mx-auto">
             <div className="mb-12 flex items-center justify-between">
               <div>
-                <h1 className="text-3xl font-light text-gray-900 mb-2">
-                  Inventory Dashboard
-                </h1>
+                <h1 className="text-3xl font-light text-gray-900 mb-2">Inventory Dashboard</h1>
                 <p className="text-gray-600">
                   Monitor and manage all inventory across the organization
                 </p>
@@ -151,24 +142,20 @@ export default function AdminBoxInventory() {
               <div className="lg:col-span-2">
                 <div className="bg-white border border-gray-200">
                   <div className="border-b px-6 py-4 flex items-center justify-between">
-                    <h2 className="text-lg font-medium text-gray-900">
-                      Current Inventory
-                    </h2>
+                    <h2 className="text-lg font-medium text-gray-900">Current Inventory</h2>
                     <select
                       value={filterUser}
                       onChange={(e) => setFilterUser(e.target.value)}
                       className="px-3 py-1 border border-gray-300 text-sm focus:outline-none"
                     >
                       <option value="all">All Users</option>
-                      {[
-                        ...new Set(
-                          inventoryData.map((item) => item.user).filter(Boolean)
-                        ),
-                      ].map((username) => (
-                        <option key={username} value={username}>
-                          {username}
-                        </option>
-                      ))}
+                      {[...new Set(inventoryData.map((item) => item.user).filter(Boolean))].map(
+                        (username) => (
+                          <option key={username} value={username}>
+                            {username}
+                          </option>
+                        )
+                      )}
                     </select>
                   </div>
 
@@ -189,29 +176,15 @@ export default function AdminBoxInventory() {
                         {filteredData.map((item) => (
                           <tr key={item.id} className="hover:bg-gray-50">
                             <td className="px-6 py-4">
-                              <div className="text-sm font-medium text-gray-900">
-                                {item.user}
-                              </div>
-                              <div className="text-sm text-gray-500">
-                                {item.role}
-                              </div>
+                              <div className="text-sm font-medium text-gray-900">{item.user}</div>
+                              <div className="text-sm text-gray-500">{item.role}</div>
                             </td>
                             <td className="px-6 py-4 text-sm">{item.boxes}</td>
-                            <td className="px-6 py-4 text-sm">
-                              {item.largeCoolers}
-                            </td>
-                            <td className="px-6 py-4 text-sm">
-                              {item.smallCoolers}
-                            </td>
-                            <td className="px-6 py-4 text-sm font-medium">
-                              {item.totalItems}
-                            </td>
-                            <td className="px-6 py-4 text-sm text-gray-500">
-                              {item.driverName}
-                            </td>
-                            <td className="px-6 py-4 text-sm text-gray-500">
-                              {item.lastUpdated}
-                            </td>
+                            <td className="px-6 py-4 text-sm">{item.largeCoolers}</td>
+                            <td className="px-6 py-4 text-sm">{item.smallCoolers}</td>
+                            <td className="px-6 py-4 text-sm font-medium">{item.totalItems}</td>
+                            <td className="px-6 py-4 text-sm text-gray-500">{item.driverName}</td>
+                            <td className="px-6 py-4 text-sm text-gray-500">{item.lastUpdated}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -223,9 +196,7 @@ export default function AdminBoxInventory() {
                 <div className="lg:col-span-1">
                   <div className="bg-white border border-gray-200">
                     <div className="border-b border-gray-200 px-6 py-4">
-                      <h2 className="text-lg font-medium text-gray-900">
-                        Recent Activity
-                      </h2>
+                      <h2 className="text-lg font-medium text-gray-900">Recent Activity</h2>
                     </div>
                     <div className="p-6">
                       <div className="space-y-4">
@@ -235,16 +206,12 @@ export default function AdminBoxInventory() {
                               <TrendingUp className="w-4 h-4 text-blue-600" />
                             </div>
                             <div className="flex-1">
-                              <div className="text-sm font-medium text-gray-900">
-                                {item.user}
-                              </div>
+                              <div className="text-sm font-medium text-gray-900">{item.user}</div>
                               <div className="text-sm text-gray-600">
-                                Boxes: {item.boxes}, Large: {item.largeCoolers},
-                                Small: {item.smallCoolers}
+                                Boxes: {item.boxes}, Large: {item.largeCoolers}, Small:{' '}
+                                {item.smallCoolers}
                               </div>
-                              <div className="text-xs text-gray-500 mt-1">
-                                {item.lastUpdated}
-                              </div>
+                              <div className="text-xs text-gray-500 mt-1">{item.lastUpdated}</div>
                             </div>
                           </div>
                         ))}
@@ -276,7 +243,5 @@ const SummaryCard = ({ label, value, color, icon }) => (
 );
 
 const TableHeader = ({ title }) => (
-  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-    {title}
-  </th>
+  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{title}</th>
 );
