@@ -1,4 +1,5 @@
-// routes/invoice.js
+const path = require('path');
+
 
 const express = require('express');
 const router = express.Router();
@@ -44,7 +45,8 @@ router.get('/download/:filename', async (req, res) => {
 
 router.get('/:filename', (req, res) => {
   const { filename } = req.params;
-  const filePath = path.join(__dirname, '../uploads', filename);
+  const fp = 'C:\\Users\\Administrator\\Desktop\\invoice_app_exe\\dist\\invoice_script\\data\\invoices_local'
+  const filePath = path.resolve(__dirname, fp, filename);
 
   if (!fs.existsSync(filePath)) {
     return res.status(404).send('File not found');
@@ -54,5 +56,23 @@ router.get('/:filename', (req, res) => {
   res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
   res.sendFile(filePath);
 });
+
+router.put('/:id', async (req, res) => {
+  try {
+    const updates = req.body;
+    const invoice = await Invoice.findByIdAndUpdate(
+      req.params.id,
+      updates,
+      { new: true, runValidators: true }
+    );
+    if (!invoice) return res.status(404).json({ error: 'Not found' });
+    res.json(invoice);
+  } catch (err) {
+    console.error('Error in PUT /api/invoices/:id →', err);
+    res.status(500).json({ error: 'Server error', message: err.message });
+  }
+});
+
+
 
 module.exports = router;

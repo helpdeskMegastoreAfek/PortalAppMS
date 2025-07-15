@@ -58,8 +58,16 @@ router.post('/resetPassword', async (req, res) => {
 // REGISTER
 router.post("/register", async (req, res) => {
   try {
-    const { username, password, email, role, allowedApps, status, orgUnit ,permissions} =
-      req.body;
+    const {
+      username,
+      password,
+      email,
+      role,
+      allowedApps,
+      status,
+      orgUnit,
+      permissions
+    } = req.body;
 
     if (!username || !password || !email) {
       return res
@@ -73,12 +81,13 @@ router.post("/register", async (req, res) => {
       username,
       password: hashed,
       email,
-      role: role || "user",
-      status: status || "Active",
-      allowedApps: allowedApps || [],
-      orgUnit: orgUnit || "",
-      updatedAt: new Date(),
-      permissions,
+      role:       role       || "user",
+      status:     status     || "Active",
+      allowedApps:allowedApps|| [],
+      orgUnit:    orgUnit    || "",
+      permissions:permissions || {},
+      needsPasswordChange: true,   
+      updatedAt: new Date()
     });
 
     await user.save();
@@ -87,19 +96,21 @@ router.post("/register", async (req, res) => {
       message: "User created",
       user: {
         username: user.username,
-        email: user.email,
-        role: user.role,
-        status: user.status,
+        email:    user.email,
+        role:     user.role,
+        status:   user.status,
         allowedApps: user.allowedApps,
-        orgUnit: user.orgUnit,
+        orgUnit:  user.orgUnit,
         updatedAt: user.updatedAt,
-      },
+        needsPasswordChange: user.needsPasswordChange
+      }
     });
   } catch (err) {
     console.error("Register Error:", err);
     res.status(400).json({ error: err.message || "Error creating user" });
   }
 });
+
 
 // LOGIN
 router.post("/login", async (req, res) => {
@@ -124,7 +135,8 @@ router.post("/login", async (req, res) => {
       username: user.username,
       role: user.role,
       allowedApps: user.allowedApps,
-      permissions: user.permissions
+      permissions: user.permissions,
+      needsPasswordChange: user.needsPasswordChange
     },
   });
 });
