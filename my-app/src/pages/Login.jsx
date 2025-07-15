@@ -1,23 +1,23 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 export default function Login() {
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const navigate = useNavigate();
 
   const handleLogin = async () => {
     try {
-      const res = await fetch("api/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const res = await fetch('http://localhost:3000/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password }),
       });
 
       const data = await res.json();
 
       if (data.success) {
-        localStorage.setItem("user", JSON.stringify(data.user));
+        localStorage.setItem('user', JSON.stringify(data.user));
       }
 
       if (!res.ok) {
@@ -27,18 +27,16 @@ export default function Login() {
 
       const userFromResponse = data.user;
       const fixedId =
-        typeof userFromResponse._id === "object"
-          ? userFromResponse._id.$oid
-          : userFromResponse._id;
+        typeof userFromResponse._id === 'object' ? userFromResponse._id.$oid : userFromResponse._id;
 
       const userWithFixedId = { ...userFromResponse, _id: fixedId };
 
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(userWithFixedId));
-      navigate("/");
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(userWithFixedId));
+      navigate('/');
     } catch (err) {
-      console.error("Login error:", err);
-      alert("Server error");
+      console.error('Login error:', err);
+      alert('Server error');
     }
   };
 

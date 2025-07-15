@@ -6,7 +6,12 @@ const cors = require("cors");
 dotenv.config();
 const app = express();
 
-app.use(cors());
+
+const corsOptions = {
+  origin: 'http://localhost:5173' 
+}; 
+
+app.use(cors(corsOptions));
 app.use(express.json());
 console.log("Registering auth routes");
 
@@ -22,12 +27,16 @@ app.use("/api/inventory", inventoryRoutes);
 const mealsRoutes = require("./routes/meals");
 app.use("/api/meals", mealsRoutes);
 
+const invoiceRoutes = require('./routes/invoices');
+app.use("/api/invoices", invoiceRoutes);
+
+
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => {
     console.log("MongoDB connected");
-    app.listen(5000, "0.0.0.0", () =>
-      console.log("Server running on port 5000")
+    app.listen(3000, "0.0.0.0", () =>
+      console.log("Server running on port 3000")
     );
   })
   .catch((err) => console.error(err));

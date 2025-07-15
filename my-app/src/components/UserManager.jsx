@@ -1,25 +1,31 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { saveAs } from "file-saver";
-import Papa from "papaparse";
+import { useEffect, useState } from 'react';
+import { saveAs } from 'file-saver';
+import Papa from 'papaparse';
+import { Switch } from '@headlessui/react';
 
 export default function UsersTable({ refreshTrigger, appOptions }) {
   const [users, setUsers] = useState([]);
-  const [search, setSearch] = useState("");
-  const [filterRole, setFilterRole] = useState("");
-  const [filterStatus, setFilterStatus] = useState("");
+  const [search, setSearch] = useState('');
+  const [filterRole, setFilterRole] = useState('');
+  const [filterStatus, setFilterStatus] = useState('');
   const [editingUser, setEditingUser] = useState(null);
   const [editedData, setEditedData] = useState({});
   const [confirmDelete, setConfirmDelete] = useState(null);
-  const [errorMsg, setErrorMsg] = useState("");
+  const [errorMsg, setErrorMsg] = useState('');
+  const [resetModalOpen, setResetModalOpen] = useState(false);
+  const [resetUser, setResetUser] = useState(null);
+  const [tempPassword, setTempPassword] = useState('');
+  const [loadingReset, setLoadingReset] = useState(false);
+  const [errorReset, setErrorReset] = useState('');
+  // const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("api/api/getUsers")
+    fetch('http://localhost:3000/api/getUsers')
       .then((res) => res.json())
       .then((data) => setUsers(data));
   }, [refreshTrigger]);
-
   const filtered = users.filter((u) => {
     return (
       u.username.toLowerCase().includes(search.toLowerCase()) &&
@@ -29,43 +35,42 @@ export default function UsersTable({ refreshTrigger, appOptions }) {
   });
 
   const statusColor = {
-    Active: "bg-emerald-100 text-emerald-800 border-emerald-200",
-    Disable: "bg-red-100 text-red-800 border-red-200",
+    Active: 'bg-emerald-100 text-emerald-800 border-emerald-200',
+    Disable: 'bg-red-100 text-red-800 border-red-200',
   };
 
   const exportToCSV = () => {
     const csv = Papa.unparse(filtered);
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    saveAs(blob, "users_export.csv");
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    saveAs(blob, 'users_export.csv');
   };
 
   const handleSaveEdit = async () => {
-    const res = await fetch(`api/api/getUsers/${editingUser._id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
+    const res = await fetch(`http://localhost:3000/api/getUsers/${editingUser._id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(editedData),
     });
     if (res.ok) {
       const updated = await res.json();
-      setUsers((prev) =>
-        prev.map((user) => (user._id === updated._id ? updated : user))
-      );
+      setUsers((prev) => prev.map((user) => (user._id === updated._id ? updated : user)));
       setEditingUser(null);
     }
+    
   };
 
   const handleDelete = async (id) => {
     const userToDelete = users.find((u) => u._id === id);
-    if (userToDelete.role === "admin") {
-      const adminCount = users.filter((u) => u.role === "admin").length;
+    if (userToDelete.role === 'admin') {
+      const adminCount = users.filter((u) => u.role === 'admin').length;
       if (adminCount <= 1) {
-        setErrorMsg("The last admin in the system cannot be deleted!");
+        setErrorMsg('The last admin in the system cannot be deleted!');
         return;
       }
     }
 
-    const res = await fetch(`api/api/getUsers/${id}`, {
-      method: "DELETE",
+    const res = await fetch(`http://localhost:3000/api/getUsers/${id}`, {
+      method: 'DELETE',
     });
 
     if (res.ok) {
@@ -74,13 +79,52 @@ export default function UsersTable({ refreshTrigger, appOptions }) {
     }
   };
 
+  const openResetModal = (user) => {
+    setResetUser(user);
+    setTempPassword('');
+    setErrorReset('');
+    setLoadingReset(false);
+    setResetModalOpen(true);
+  };
+
+  const handleResetPassword = async () => {
+    if (!resetUser) return;
+    setLoadingReset(true);
+    setErrorReset('');
+    try {
+      const res = await fetch(
+        'http://localhost:3000/api/auth/resetPassword',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: resetUser._id }),
+        }
+      );
+      if (!res.ok) throw new Error(`Status ${res.status}`);
+      const json = await res.json();
+      // מניח שה־API מחזיר { tempPassword: 'Abc123!' }
+      setTempPassword(json.tempPassword || json.temp_password || '');
+    } catch (err) {
+      console.error(err);
+      setErrorReset('שגיאה באיפוס הסיסמה');
+    } finally {
+      setLoadingReset(false);
+    }
+  };
+
+  
+  // if (loading)
+  //   return (
+  //     <div className="flex items-center justify-center h-screen text-xl text-slate-500">
+  //       Loading...
+  //     </div>
+  //   );
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Header Section */}
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">
-          User Management
-        </h1>
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">User Management</h1>
         <p className="text-gray-600">Manage and organize your team members</p>
       </div>
 
@@ -138,12 +182,7 @@ export default function UsersTable({ refreshTrigger, appOptions }) {
             onClick={exportToCSV}
             className="inline-flex items-center px-4 py-2.5 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 transition-colors shadow-sm"
           >
-            <svg
-              className="w-4 h-4 mr-2"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
+            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -159,10 +198,8 @@ export default function UsersTable({ refreshTrigger, appOptions }) {
       {/* Results Summary */}
       <div className="mb-4">
         <p className="text-sm text-gray-600">
-          Showing{" "}
-          <span className="font-medium text-gray-900">{filtered.length}</span>{" "}
-          of <span className="font-medium text-gray-900">{users.length}</span>{" "}
-          users
+          Showing <span className="font-medium text-gray-900">{filtered.length}</span> of{' '}
+          <span className="font-medium text-gray-900">{users.length}</span> users
         </p>
       </div>
 
@@ -208,27 +245,20 @@ export default function UsersTable({ refreshTrigger, appOptions }) {
                         </div>
                       </div>
                       <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900">
-                          {u.username}
-                        </div>
+                        <div className="text-sm font-medium text-gray-900">{u.username}</div>
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                    {u.email}
-                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{u.email}</td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span
                       className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${
-                        statusColor[u.status] ||
-                        "bg-gray-100 text-gray-800 border-gray-200"
+                        statusColor[u.status] || 'bg-gray-100 text-gray-800 border-gray-200'
                       }`}
                     >
                       <div
                         className={`w-1.5 h-1.5 rounded-full mr-1.5 ${
-                          u.status === "Active"
-                            ? "bg-emerald-600"
-                            : "bg-red-600"
+                          u.status === 'Active' ? 'bg-emerald-600' : 'bg-red-600'
                         }`}
                       ></div>
                       {u.status}
@@ -240,13 +270,32 @@ export default function UsersTable({ refreshTrigger, appOptions }) {
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {u.updatedAt?.split("T")[0]}
+                    {u.updatedAt?.split('T')[0]}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {u.orgUnit || "-"}
+                    {u.orgUnit || '-'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex items-center justify-end space-x-2">
+                      <button
+                        onClick={() => openResetModal(u)}
+                        className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-orange-700 bg-orange-100 rounded-md hover:bg-orange-200 focus:ring-2 focus:ring-orange-500 focus:ring-offset-1 transition-colors"
+                      >
+                        <svg
+                          className="w-3 h-3 mr-1"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                          />
+                        </svg>
+                        Reset password
+                      </button>
                       <button
                         onClick={() => {
                           setEditingUser(u);
@@ -299,32 +348,39 @@ export default function UsersTable({ refreshTrigger, appOptions }) {
 
       {/* Edit Modal */}
       {editingUser && (
-        <div className="fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 backdrop-blur-xs bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-lg transform transition-all">
             <div className="px-6 py-4 border-b border-gray-200">
               <h2 className="text-xl font-semibold text-gray-900">
                 Edit User: {editingUser.username}
               </h2>
-              <p className="text-sm text-gray-600 mt-1">
-                Update user information and permissions
-              </p>
+              <p className="text-sm text-gray-600 mt-1">Update user information and permissions</p>
             </div>
 
             <div className="px-6 py-6 space-y-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                  User Name
+                </label>
+              <div>
+                <input type="text" value={editedData.username} onChange={(e) => setEditedData({...editedData,username: e.target.value})}
+                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                placeholder='Enter user name'
+                />
+              </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Email Address
                 </label>
                 <input
                   type="email"
-                  value={editedData.email ?? ""}
-                  onChange={(e) =>
-                    setEditedData({ ...editedData, email: e.target.value })
-                  }
+                  value={editedData.email ?? ''}
+                  onChange={(e) => setEditedData({ ...editedData, email: e.target.value })}
                   className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                   placeholder="Enter email address"
                 />
               </div>
+              
+              
 
               {/* <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -340,16 +396,13 @@ export default function UsersTable({ refreshTrigger, appOptions }) {
                   placeholder="Enter new password"
                 />
               </div> */}
+              
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Status
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
                 <select
                   value={editedData.status}
-                  onChange={(e) =>
-                    setEditedData({ ...editedData, status: e.target.value })
-                  }
+                  onChange={(e) => setEditedData({ ...editedData, status: e.target.value })}
                   className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-colors"
                 >
                   <option value="Active">Active</option>
@@ -363,24 +416,18 @@ export default function UsersTable({ refreshTrigger, appOptions }) {
                 </label>
                 <input
                   type="text"
-                  value={editedData.orgUnit ?? ""}
-                  onChange={(e) =>
-                    setEditedData({ ...editedData, orgUnit: e.target.value })
-                  }
+                  value={editedData.orgUnit ?? ''}
+                  onChange={(e) => setEditedData({ ...editedData, orgUnit: e.target.value })}
                   className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                   placeholder="Enter organization unit"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Role
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Role</label>
                 <select
                   value={editedData.role}
-                  onChange={(e) =>
-                    setEditedData({ ...editedData, role: e.target.value })
-                  }
+                  onChange={(e) => setEditedData({ ...editedData, role: e.target.value })}
                   className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-colors"
                 >
                   <option value="user">User</option>
@@ -395,20 +442,13 @@ export default function UsersTable({ refreshTrigger, appOptions }) {
               </label>
               <div className="space-y-2">
                 {appOptions.map((app) => (
-                  <label
-                    key={app.value}
-                    className="flex items-center space-x-2"
-                  >
+                  <label key={app.value} className="flex items-center space-x-2">
                     <input
                       type="checkbox"
                       checked={editedData.allowedApps?.includes(app.value)}
                       onChange={() => {
-                        const updatedApps = editedData.allowedApps?.includes(
-                          app.value
-                        )
-                          ? editedData.allowedApps.filter(
-                              (v) => v !== app.value
-                            )
+                        const updatedApps = editedData.allowedApps?.includes(app.value)
+                          ? editedData.allowedApps.filter((v) => v !== app.value)
                           : [...(editedData.allowedApps || []), app.value];
 
                         setEditedData({
@@ -424,6 +464,8 @@ export default function UsersTable({ refreshTrigger, appOptions }) {
               </div>
             </div>
 
+       
+
             <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 rounded-b-xl flex justify-end space-x-3">
               <button
                 onClick={() => setEditingUser(null)}
@@ -438,6 +480,62 @@ export default function UsersTable({ refreshTrigger, appOptions }) {
                 Save Changes
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+        {/* Reset Password Modal */}
+      {resetModalOpen && (
+        <div className="fixed inset-0 backdrop-blur-xs bg-opacity-40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-sm">
+            {!tempPassword ? (
+              <>
+                <h2 className="text-lg font-bold mb-4">
+                  Reset Password: {resetUser.username} ({resetUser.role})
+                </h2>
+                {errorReset && (
+                  <p className="mb-2 text-sm text-red-600">{errorReset}</p>
+                )}
+                <p className="mb-4 text-sm text-gray-700">
+                  Click “Reset Password” to create a new temporary password.
+                </p>
+                <div className="flex justify-end gap-2">
+                  <button
+                    onClick={() => setResetModalOpen(false)}
+                    className="px-4 py-2 bg-gray-100 rounded hover:bg-gray-200"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleResetPassword}
+                    disabled={loadingReset}
+                    className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:opacity-50"
+                  >
+                    {loadingReset ? 'Create' : 'Reset Password'}
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <h2 className="text-lg font-bold mb-4">
+                  Temporary password for {resetUser.username}
+                </h2>
+                <p className="font-mono bg-slate-100 p-2 rounded text-center mb-4">
+                  {tempPassword}
+                </p>
+                <p className="text-sm text-gray-600 mb-4">
+                  Pass this password to the user. It is valid until changed by them.
+                </p>
+                <div className="flex justify-end">
+                  <button
+                    onClick={() => setResetModalOpen(false)}
+                    className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}
@@ -466,15 +564,11 @@ export default function UsersTable({ refreshTrigger, appOptions }) {
                   </div>
                 </div>
                 <div className="ml-4">
-                  <h3 className="text-lg font-semibold text-gray-900">
-                    Delete User
-                  </h3>
+                  <h3 className="text-lg font-semibold text-gray-900">Delete User</h3>
                   <p className="text-sm text-gray-600 mt-1">
-                    Are you sure you want to delete{" "}
-                    <span className="font-medium">
-                      {confirmDelete.username}
-                    </span>
-                    ? This action cannot be undone.
+                    Are you sure you want to delete{' '}
+                    <span className="font-medium">{confirmDelete.username}</span>? This action
+                    cannot be undone.
                   </p>
                 </div>
               </div>
@@ -506,7 +600,7 @@ export default function UsersTable({ refreshTrigger, appOptions }) {
             <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 rounded-b-xl flex justify-end space-x-3">
               <button
                 onClick={() => {
-                  setErrorMsg("");
+                  setErrorMsg('');
                   setConfirmDelete(null);
                 }}
                 className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors"

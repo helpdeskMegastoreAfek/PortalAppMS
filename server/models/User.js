@@ -25,6 +25,10 @@ const userSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
+  permissions: {
+    viewFinancials: { type: Boolean, default: false },
+    editInvoices: { type: Boolean, default: false },
+  },
 });
 
 module.exports = mongoose.model("User", userSchema);

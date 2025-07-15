@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { LogOut, User, Lock } from "lucide-react";
-import ChangePasswordModal from "./ChangePasswordModal";
+import { useState } from 'react';
+import { LogOut, User, Lock } from 'lucide-react';
+import ChangePasswordModal from './ChangePasswordModal';
 
 export default function Header({ user }) {
   const [showModal, setShowModal] = useState(false);
@@ -29,8 +29,8 @@ export default function Header({ user }) {
 
           <button
             onClick={() => {
-              localStorage.removeItem("user");
-              window.location.href = "/login";
+              localStorage.removeItem('user');
+              window.location.href = '/login';
             }}
             className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
           >
