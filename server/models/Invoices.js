@@ -34,7 +34,11 @@ const invoiceSchema = new mongoose.Schema({
     processed_at: {
         type: Date,
         default: Date.now 
-    }
+    },
+    confirmed: {
+    type: Boolean,
+    default: false
+  }
 });
 
 module.exports = mongoose.model('Invoice', invoiceSchema);

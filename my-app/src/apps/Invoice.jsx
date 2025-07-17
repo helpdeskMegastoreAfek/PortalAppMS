@@ -2,29 +2,29 @@ import React, { useState, useEffect, useMemo } from 'react';
 import * as XLSX from 'xlsx';
 import Header from '../components/Header';
 import Sidebar from '../components/Sidebar';
+import { FileDown } from 'lucide-react';
 
 const API_URL = 'http://localhost:3000';
 
-const transformMongoInvoice = (mongoDoc) => {
-  const fmtDate = (d) =>
-    d ? new Date(d).toISOString().substring(0, 10) : null;
+// const transformMongoInvoice = (mongoDoc) => {
+//   const fmtDate = (d) => (d ? new Date(d).toISOString().substring(0, 10) : null);
 
-  const fullPath = mongoDoc.source_path || '';
-  const filename = fullPath.split(/[\\/]/).pop();
-
-  return {
-    id: mongoDoc._id,
-    filename,
-    invoice_date: fmtDate(mongoDoc.invoice_date),
-    total_amount:
-      mongoDoc.total_amount != null ? mongoDoc.total_amount : null,
-    order_reference: mongoDoc.order_reference || '',
-    city: mongoDoc.city || '',
-    item_row_count: mongoDoc.item_row_count || 0,
-    source_path: fullPath,
-    processed_at: fmtDate(mongoDoc.processed_at),
-  };
-};
+const transformMongoInvoice = (mongoDoc) => ({
+  id: mongoDoc._id,
+  filename: mongoDoc.source_path.split(/[\\/]/).pop(),
+  invoice_date: mongoDoc.invoice_date
+    ? new Date(mongoDoc.invoice_date).toISOString().substring(0, 10)
+    : null,
+  total_amount: mongoDoc.total_amount ?? null,
+  order_reference: mongoDoc.order_reference || '',
+  city: mongoDoc.city || '',
+  item_row_count: mongoDoc.item_row_count || 0,
+  source_path: mongoDoc.source_path || '',
+  processed_at: mongoDoc.processed_at
+    ? new Date(mongoDoc.processed_at).toISOString().substring(0, 10)
+    : null,
+  confirmed: mongoDoc.confirmed || false, // שדה חדש
+});
 
 const Card = ({ children, className = '' }) => (
   <div className={`bg-white rounded-lg shadow-sm ${className}`}>{children}</div>
@@ -39,7 +39,8 @@ const Input = (props) => (
   />
 );
 const Button = ({ children, variant = 'primary', size = 'default', className = '', ...props }) => {
-  const base = 'inline-flex items-center justify-center rounded-md text-sm font-medium transition focus:outline-none disabled:opacity-50';
+  const base =
+    'inline-flex items-center justify-center rounded-md text-sm font-medium transition focus:outline-none disabled:opacity-50';
   const variants = {
     primary: 'bg-indigo-600 text-white hover:bg-indigo-500',
     secondary: 'bg-slate-100 text-slate-900 hover:bg-slate-200',
@@ -66,16 +67,22 @@ const DashboardPage = () => {
   const [userPermissions, setUserPermissions] = useState({
     viewFinancials: false,
     editInvoices: false,
+    undoInvoice: false,
   });
 
   const [editingInvoice, setEditingInvoice] = useState(null);
   const [editValues, setEditValues] = useState({});
+  const [confirmed, setConfirmed] = useState(new Set());
+
+  const isStillMissing = (inv) => hasMissing(inv) && inv.confirmed === false;
 
   useEffect(() => {
     setUserPermissions({
       viewFinancials: user.permissions?.viewFinancials ?? false,
       editInvoices: user.permissions?.editInvoices ?? false,
+      undoInvoice: user.permissions?.undoInvoice ?? false,
     });
+    
 
     (async () => {
       try {
@@ -96,6 +103,7 @@ const DashboardPage = () => {
     !inv.filename ||
     !inv.invoice_date ||
     inv.total_amount == null ||
+    inv.total_amount == 0 ||
     !inv.order_reference ||
     !inv.city ||
     inv.item_row_count <= 0;
@@ -104,20 +112,13 @@ const DashboardPage = () => {
     () =>
       invoices.filter((inv) => {
         const lf = searchTerm.toLowerCase();
-        const matchSearch =
-          !searchTerm ||
-          Object.values(inv)
-            .join(' ')
-            .toLowerCase()
-            .includes(lf);
+        const matchSearch = !searchTerm || Object.values(inv).join(' ').toLowerCase().includes(lf);
         const matchStart = !startDate || inv.invoice_date >= startDate;
         const matchEnd = !endDate || inv.invoice_date <= endDate;
         return matchSearch && matchStart && matchEnd;
       }),
     [invoices, searchTerm, startDate, endDate]
   );
-
-  const anyMissing = useMemo(() => filtered.some(hasMissing), [filtered]);
 
   const summary = useMemo(() => {
     let inc = 0,
@@ -133,6 +134,7 @@ const DashboardPage = () => {
         cntCred++;
       }
     });
+
     const net = inc - cred;
     const fmt = (n) =>
       n.toLocaleString('he-IL', {
@@ -148,6 +150,13 @@ const DashboardPage = () => {
       rawNet: net,
     };
   }, [filtered]);
+
+  const sortedInvoices = useMemo(
+    () => [...filtered].sort((a, b) => (isStillMissing(b) ? 1 : 0) - (isStillMissing(a) ? 1 : 0)),
+    [filtered, confirmed]
+  );
+
+  const anyMissing = useMemo(() => sortedInvoices.some(isStillMissing), [sortedInvoices]);
 
   const download = (fn) => fn && window.open(`${API_URL}/api/invoices/download/${fn}`, '_blank');
   const exportExcel = () => {
@@ -186,9 +195,7 @@ const DashboardPage = () => {
     );
   if (error)
     return (
-      <div className="flex items-center justify-center h-screen text-red-700 p-4">
-        {error}
-      </div>
+      <div className="flex items-center justify-center h-screen text-red-700 p-4">{error}</div>
     );
 
   return (
@@ -203,14 +210,14 @@ const DashboardPage = () => {
         {userPermissions.viewFinancials && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 w-full">
             <Card>
-              <CardContent className='text-center'>
+              <CardContent className="text-center">
                 <p className="text-green-600">Total Income</p>
                 <p className="text-3xl">₪{summary.inc}</p>
                 <p className="text-xs">{summary.cntInv} invoices</p>
               </CardContent>
             </Card>
             <Card>
-              <CardContent className='text-center'>
+              <CardContent className="text-center">
                 <p className="text-red-600">Total Credits</p>
                 <p className="text-3xl">₪{summary.cred}</p>
                 <p className="text-xs">{summary.cntCred} credit notes</p>
@@ -220,6 +227,7 @@ const DashboardPage = () => {
               <CardContent>
                 <p className="text-blue-400">Net Total</p>
                 <p className="text-3xl text-black">₪{summary.net}</p>
+                <p className="text-xs text-black">{summary.cntInv + summary.cntCred} All invoices</p>
               </CardContent>
             </Card>
           </div>
@@ -227,27 +235,20 @@ const DashboardPage = () => {
 
         <Card>
           <div className="p-4 border-b border-slate-200 flex flex-wrap items-center gap-4">
-            <div className="flex gap-2">
+            <div className="flex gap-2 ">
               <Input
+              
                 placeholder="Search..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
-              <Button variant="secondary" onClick={exportExcel}>
-                Export to Excel
+              <Button className="text-xs" variant="secondary" onClick={exportExcel}>
+                <FileDown />
               </Button>
             </div>
             <div className="flex gap-2">
-              <Input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-              />
-              <Input
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-              />
+              <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+              <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
               <Button
                 variant="ghost"
                 onClick={() => {
@@ -281,8 +282,8 @@ const DashboardPage = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-center">
-                {filtered.map((inv) => {
-                  const missing = hasMissing(inv);
+                {sortedInvoices.map((inv) => {
+                  const missing = isStillMissing(inv);
                   const isEditing = editingInvoice === inv.id;
                   return (
                     <tr key={inv.id} className={missing ? 'bg-red-100' : 'bg-white'}>
@@ -349,9 +350,7 @@ const DashboardPage = () => {
                           <Input
                             type="text"
                             value={editValues.city}
-                            onChange={(e) =>
-                              setEditValues((v) => ({ ...v, city: e.target.value }))
-                            }
+                            onChange={(e) => setEditValues((v) => ({ ...v, city: e.target.value }))}
                           />
                         ) : (
                           inv.city || '—'
@@ -385,14 +384,67 @@ const DashboardPage = () => {
                             Download
                           </Button>
                           {userPermissions.editInvoices && !isEditing && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => startEdit(inv)}
-                            >
+                            <Button variant="secondary" size="sm" onClick={() => startEdit(inv)}>
                               Edit
                             </Button>
                           )}
+                          {userPermissions.editInvoices && missing && !isEditing && (
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              onClick={async () => {
+                                try {
+                                  const res = await fetch(`${API_URL}/api/invoices/${inv.id}`, {
+                                    method: 'PUT',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ confirmed: true }),
+                                  });
+                                  if (!res.ok) throw new Error(res.statusText);
+                                  const updated = await res.json();
+                                 
+                                  setInvoices((prev) =>
+                                    prev.map((i) =>
+                                      i.id === inv.id ? transformMongoInvoice(updated) : i
+                                    )
+                                  );
+                                } catch (e) {
+                                  console.error(e);
+                                  alert('Error confirming invoice');
+                                }
+                              }}
+                            >
+                              Confirm
+                            </Button>
+                          )}
+                          {/*Undo */}
+                          {userPermissions.undoInvoice  && inv.confirmed && !isEditing && (
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              onClick={async () => {
+                                try {
+                                  const res = await fetch(`${API_URL}/api/invoices/${inv.id}`, {
+                                    method: 'PUT',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ confirmed: false }),
+                                  });
+                                  if (!res.ok) throw new Error(res.statusText);
+                                  const updated = await res.json();
+                                  setInvoices((prev) =>
+                                    prev.map((i) =>
+                                      i.id === inv.id ? transformMongoInvoice(updated) : i
+                                    )
+                                  );
+                                } catch (e) {
+                                  console.error(e);
+                                  alert('Error undoing confirmation');
+                                }
+                              }}
+                            >
+                              Undo
+                            </Button>
+                          )}
+
                           {isEditing && (
                             <>
                               <Button
@@ -400,21 +452,16 @@ const DashboardPage = () => {
                                 size="sm"
                                 onClick={async () => {
                                   try {
-                                    const res = await fetch(
-                                      `${API_URL}/api/invoices/${inv.id}`,
-                                      {
-                                        method: 'PUT',
-                                        headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify(editValues),
-                                      }
-                                    );
+                                    const res = await fetch(`${API_URL}/api/invoices/${inv.id}`, {
+                                      method: 'PUT',
+                                      headers: { 'Content-Type': 'application/json' },
+                                      body: JSON.stringify(editValues),
+                                    });
                                     if (!res.ok) throw new Error(res.statusText);
                                     const updated = await res.json();
                                     setInvoices((prev) =>
                                       prev.map((i) =>
-                                        i.id === inv.id
-                                          ? transformMongoInvoice(updated)
-                                          : i
+                                        i.id === inv.id ? transformMongoInvoice(updated) : i
                                       )
                                     );
                                   } catch (e) {

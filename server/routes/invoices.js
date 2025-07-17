@@ -74,5 +74,19 @@ router.put('/:id', async (req, res) => {
 });
 
 
+router.put('/:id', async (req, res) => {
+  try {
+    const updates = req.body;
+    const updated = await Invoice.findByIdAndUpdate(
+      req.params.id,
+      updates,
+      { new: true }
+    );
+    res.json(updated);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 
 module.exports = router;

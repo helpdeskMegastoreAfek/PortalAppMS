@@ -21,8 +21,8 @@ export default function AdminPanel() {
   const [permissions, setPermissions] = useState({
     viewFinancials: false,
     editInvoices: false,
+    undoInvoice: false
   });
-
 
   const user = JSON.parse(localStorage.getItem('user'));
   if (user?.role !== 'admin') {
@@ -49,7 +49,7 @@ export default function AdminPanel() {
 
   const handlePermissionChange = (e) => {
     const { name, checked } = e.target;
-    setPermissions(prev => ({ ...prev, [name]: checked }));
+    setPermissions((prev) => ({ ...prev, [name]: checked }));
   };
 
   const handleSubmit = async () => {
@@ -59,17 +59,17 @@ export default function AdminPanel() {
     }
 
     const permissionLoad = {
-    username,
-    password,
-    email,
-    role,
-    status,
-    orgUnit,
-    allowedApps,
-    permissions, 
-  };
+      username,
+      password,
+      email,
+      role,
+      status,
+      orgUnit,
+      allowedApps,
+      permissions,
+    };
 
-   console.log('Sending this payload to server:', permissionLoad);
+    console.log('Sending this payload to server:', permissionLoad);
 
     toast.promise(
       fetch('http://localhost:3000/api/auth/register', {
@@ -89,7 +89,7 @@ export default function AdminPanel() {
         setAllowedApps([]);
         setShowForm(false);
         setReloadUsers((prev) => prev + 1);
-        setPermissions({})
+        setPermissions({});
         return 'User created successfully!';
       }),
       {
@@ -99,7 +99,6 @@ export default function AdminPanel() {
       }
     );
   };
-
 
   return (
     <div className="min-h-screen bg-white">
@@ -227,15 +226,39 @@ export default function AdminPanel() {
 
               {allowedApps.includes('/invoice') && (
                 <div className="p-4 pt-6 border-t border-gray-200">
-                  <h3 className="text-sm font-medium text-gray-800 mb-3">Invoice Panel Permissions</h3>
+                  <h3 className="text-sm font-medium text-gray-800 mb-3">
+                    Invoice Panel Permissions
+                  </h3>
                   <div className="space-y-2">
                     <label className="flex items-center gap-2 text-sm">
-                      <input type="checkbox" name="viewFinancials" checked={permissions.viewFinancials} onChange={handlePermissionChange} className="w-4 h-4" />
-                      <span className="text-gray-700">Can view financial summary</span>
+                      <input
+                        type="checkbox"
+                        name="viewFinancials"
+                        checked={permissions.viewFinancials}
+                        onChange={handlePermissionChange}
+                        className="w-4 h-4"
+                      />
+                      <span className="text-gray-700">view financial summary</span>
                     </label>
                     <label className="flex items-center gap-2 text-sm">
-                      <input type="checkbox" name="editInvoices" checked={permissions.editInvoices} onChange={handlePermissionChange} className="w-4 h-4" />
-                      <span className="text-gray-700">Can edit invoices</span>
+                      <input
+                        type="checkbox"
+                        name="editInvoices"
+                        checked={permissions.editInvoices}
+                        onChange={handlePermissionChange}
+                        className="w-4 h-4"
+                      />
+                      <span className="text-gray-700">edit invoices</span>
+                    </label>
+                    <label className="flex items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        name="UndoInvoice"
+                        checked={permissions.undoInvoice}
+                        onChange={handlePermissionChange}
+                        className="w-4 h-4"
+                      />
+                      <span className="text-gray-700">Undo</span>
                     </label>
                   </div>
                 </div>
@@ -259,7 +282,7 @@ export default function AdminPanel() {
             <h2 className="text-lg font-medium text-gray-900">User Management</h2>
           </div>
           <div>
-            <UserManager loggedInUser={user} refreshTrigger={reloadUsers} appOptions={appOptions}  />
+            <UserManager loggedInUser={user} refreshTrigger={reloadUsers} appOptions={appOptions} />
           </div>
         </div>
       </div>
