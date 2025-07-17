@@ -12,7 +12,7 @@ import {
   ChevronsLeft,
   ChevronsRight,
   PackageOpen,
-  File
+  File,
 } from 'lucide-react';
 
 const appLinks = [

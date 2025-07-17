@@ -56,7 +56,6 @@ export default function UsersTable({ refreshTrigger, appOptions }) {
       setUsers((prev) => prev.map((user) => (user._id === updated._id ? updated : user)));
       setEditingUser(null);
     }
-    
   };
 
   const handleDelete = async (id) => {
@@ -92,14 +91,11 @@ export default function UsersTable({ refreshTrigger, appOptions }) {
     setLoadingReset(true);
     setErrorReset('');
     try {
-      const res = await fetch(
-        'http://localhost:3000/api/auth/resetPassword',
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId: resetUser._id }),
-        }
-      );
+      const res = await fetch('http://localhost:3000/api/auth/resetPassword', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: resetUser._id }),
+      });
       if (!res.ok) throw new Error(`Status ${res.status}`);
       const json = await res.json();
       // מניח שה־API מחזיר { tempPassword: 'Abc123!' }
@@ -112,7 +108,6 @@ export default function UsersTable({ refreshTrigger, appOptions }) {
     }
   };
 
-  
   // if (loading)
   //   return (
   //     <div className="flex items-center justify-center h-screen text-xl text-slate-500">
@@ -358,13 +353,14 @@ export default function UsersTable({ refreshTrigger, appOptions }) {
             </div>
 
             <div className="px-6 py-6 space-y-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                  User Name
-                </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">User Name</label>
               <div>
-                <input type="text" value={editedData.username} onChange={(e) => setEditedData({...editedData,username: e.target.value})}
-                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                placeholder='Enter user name'
+                <input
+                  type="text"
+                  value={editedData.username}
+                  onChange={(e) => setEditedData({ ...editedData, username: e.target.value })}
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                  placeholder="Enter user name"
                 />
               </div>
               <div>
@@ -379,8 +375,6 @@ export default function UsersTable({ refreshTrigger, appOptions }) {
                   placeholder="Enter email address"
                 />
               </div>
-              
-              
 
               {/* <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -396,7 +390,6 @@ export default function UsersTable({ refreshTrigger, appOptions }) {
                   placeholder="Enter new password"
                 />
               </div> */}
-              
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
@@ -464,8 +457,6 @@ export default function UsersTable({ refreshTrigger, appOptions }) {
               </div>
             </div>
 
-       
-
             <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 rounded-b-xl flex justify-end space-x-3">
               <button
                 onClick={() => setEditingUser(null)}
@@ -484,7 +475,7 @@ export default function UsersTable({ refreshTrigger, appOptions }) {
         </div>
       )}
 
-        {/* Reset Password Modal */}
+      {/* Reset Password Modal */}
       {resetModalOpen && (
         <div className="fixed inset-0 backdrop-blur-xs bg-opacity-40 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-sm">
@@ -493,9 +484,7 @@ export default function UsersTable({ refreshTrigger, appOptions }) {
                 <h2 className="text-lg font-bold mb-4">
                   Reset Password: {resetUser.username} ({resetUser.role})
                 </h2>
-                {errorReset && (
-                  <p className="mb-2 text-sm text-red-600">{errorReset}</p>
-                )}
+                {errorReset && <p className="mb-2 text-sm text-red-600">{errorReset}</p>}
                 <p className="mb-4 text-sm text-gray-700">
                   Click “Reset Password” to create a new temporary password.
                 </p>

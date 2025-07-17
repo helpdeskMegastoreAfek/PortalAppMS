@@ -7,46 +7,39 @@ export default function Login() {
   const navigate = useNavigate();
 
   const handleLogin = async () => {
-  try {
-    const res = await fetch('http://localhost:3000/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password }),
-    });
+    try {
+      const res = await fetch('http://localhost:3000/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+      });
 
-    const data = await res.json();
+      const data = await res.json();
 
+      if (!res.ok) {
+        alert(data.message || 'Login failed');
+        return;
+      }
 
-    if (!res.ok) {
-      alert(data.message || 'Login failed');
-      return;
+      const userFromResponse = data.user;
+      const fixedId =
+        typeof userFromResponse._id === 'object' ? userFromResponse._id.$oid : userFromResponse._id;
+      const userWithFixedId = { ...userFromResponse, _id: fixedId };
+
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(userWithFixedId));
+
+      if (data.needsPasswordChange) {
+        navigate(`/change-password/${fixedId}`);
+        return;
+      }
+
+      navigate('/');
+    } catch (err) {
+      console.error('Login error:', err);
+      alert('Server error');
     }
-
-    const userFromResponse = data.user;
-    const fixedId =
-      typeof userFromResponse._id === 'object'
-        ? userFromResponse._id.$oid
-        : userFromResponse._id;
-    const userWithFixedId = { ...userFromResponse, _id: fixedId };
-
-
-    localStorage.setItem('token', data.token);
-    localStorage.setItem('user', JSON.stringify(userWithFixedId));
-
-
-    if (data.needsPasswordChange) {
-      navigate(`/change-password/${fixedId}`);
-      return;
-    }
-
-
-    navigate('/');
-  } catch (err) {
-    console.error('Login error:', err);
-    alert('Server error');
-  }
-};
-
+  };
 
   return (
     <div className="flex justify-center items-center min-h-screen bg-gray-100">
