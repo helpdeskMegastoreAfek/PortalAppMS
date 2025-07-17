@@ -28,6 +28,7 @@ const userSchema = new mongoose.Schema({
   permissions: {
     viewFinancials: { type: Boolean, default: false },
     editInvoices: { type: Boolean, default: false },
+    undoInvoice: {type: Boolean, default: false}
   },
   needsPasswordChange: {
     type: Boolean,
