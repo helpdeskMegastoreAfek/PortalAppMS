@@ -7,6 +7,18 @@ import { ChevronsDown, ChevronsUp } from 'lucide-react';
 import Header from '../components/Header';
 import Sidebar from '../components/Sidebar';
 import toast, { Toaster } from 'react-hot-toast';
+import { Switch, FormControlLabel, FormGroup } from '@mui/material';
+
+function PermissionSwitch({ name, checked, onChange, label }) {
+  return (
+    <FormControlLabel
+      control={<Switch name={name} checked={checked} onChange={onChange} size="small" />}
+      label={label}
+      labelPlacement="start"
+      className="w-full flex items-center justify-between text-sm"
+    />
+  );
+}
 
 export default function AdminPanel() {
   const [username, setUsername] = useState('');
@@ -21,7 +33,7 @@ export default function AdminPanel() {
   const [permissions, setPermissions] = useState({
     viewFinancials: false,
     editInvoices: false,
-    undoInvoice: false
+    undoInvoice: false,
   });
 
   const user = JSON.parse(localStorage.getItem('user'));
@@ -29,6 +41,7 @@ export default function AdminPanel() {
     window.location.href = '/';
     return null;
   }
+
 
   const appOptions = [
     { label: 'Main Board (sidebar)', value: '/' },
@@ -211,15 +224,15 @@ export default function AdminPanel() {
                 <label className="block text-sm text-gray-700 mb-3">Allowed Applications</label>
                 <div className="space-y-2">
                   {appOptions.map((app) => (
-                    <label key={app.value} className="flex items-center gap-2 text-sm">
-                      <input
+                    <FormGroup key={app.value}>
+                      <PermissionSwitch
                         type="checkbox"
                         checked={allowedApps.includes(app.value)}
                         onChange={() => toggleApp(app.value)}
                         className="w-4 h-4"
+                        label={app.label}
                       />
-                      <span className="text-gray-700">{app.label}</span>
-                    </label>
+                    </FormGroup>
                   ))}
                 </div>
               </div>
@@ -230,36 +243,26 @@ export default function AdminPanel() {
                     Invoice Panel Permissions
                   </h3>
                   <div className="space-y-2">
-                    <label className="flex items-center gap-2 text-sm">
-                      <input
-                        type="checkbox"
+                    <FormGroup className="space-y-2">
+                      <PermissionSwitch
                         name="viewFinancials"
                         checked={permissions.viewFinancials}
                         onChange={handlePermissionChange}
-                        className="w-4 h-4"
-                      />
-                      <span className="text-gray-700">view financial summary</span>
-                    </label>
-                    <label className="flex items-center gap-2 text-sm">
-                      <input
-                        type="checkbox"
+                        label="View financial summary"
+                      ></PermissionSwitch>
+                      <PermissionSwitch
                         name="editInvoices"
                         checked={permissions.editInvoices}
                         onChange={handlePermissionChange}
-                        className="w-4 h-4"
-                      />
-                      <span className="text-gray-700">edit invoices</span>
-                    </label>
-                    <label className="flex items-center gap-2 text-sm">
-                      <input
-                        type="checkbox"
+                        label="edit invoices"
+                      ></PermissionSwitch>
+                      <PermissionSwitch
                         name="undoInvoice"
                         checked={permissions.undoInvoice}
                         onChange={handlePermissionChange}
-                        className="w-4 h-4"
-                      />
-                      <span className="text-gray-700">Undo</span>
-                    </label>
+                        label="Undo"
+                      ></PermissionSwitch>
+                    </FormGroup>
                   </div>
                 </div>
               )}
@@ -282,7 +285,14 @@ export default function AdminPanel() {
             <h2 className="text-lg font-medium text-gray-900">User Management</h2>
           </div>
           <div>
-            <UserManager loggedInUser={user} refreshTrigger={reloadUsers} appOptions={appOptions} />
+            <UserManager
+              loggedInUser={user}
+              refreshTrigger={reloadUsers}
+              appOptions={appOptions}
+              permissions={permissions}
+              handlePermissionChange={handlePermissionChange}
+              allowedApps={allowedApps}
+            />
           </div>
         </div>
       </div>

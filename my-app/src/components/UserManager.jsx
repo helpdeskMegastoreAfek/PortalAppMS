@@ -3,7 +3,18 @@
 import { useEffect, useState } from 'react';
 import { saveAs } from 'file-saver';
 import Papa from 'papaparse';
-import { Switch } from '@headlessui/react';
+import { Switch, FormControlLabel, FormGroup } from '@mui/material';
+
+function PermissionSwitch({ name, checked, onChange, label }) {
+  return (
+    <FormControlLabel
+      control={<Switch name={name} checked={checked} onChange={onChange} size="small" />}
+      label={label}
+      labelPlacement="start"
+      className="w-full flex items-center justify-between text-sm"
+    />
+  );
+}
 
 export default function UsersTable({ refreshTrigger, appOptions }) {
   const [users, setUsers] = useState([]);
@@ -19,7 +30,23 @@ export default function UsersTable({ refreshTrigger, appOptions }) {
   const [tempPassword, setTempPassword] = useState('');
   const [loadingReset, setLoadingReset] = useState(false);
   const [errorReset, setErrorReset] = useState('');
-  // const [loading, setLoading] = useState(true);
+  const permissions = editedData.permissions || {
+    viewFinancials: false,
+    editInvoices: false,
+    undoInvoice: false,
+  };
+
+  // handler לשינוי של checkboxes
+  const handlePermissionChange = (e) => {
+    const { name, checked } = e.target;
+    setEditedData((prev) => ({
+      ...prev,
+      permissions: {
+        ...prev.permissions,
+        [name]: checked,
+      },
+    }));
+  };
 
   useEffect(() => {
     fetch('http://localhost:3000/api/getUsers')
@@ -98,7 +125,6 @@ export default function UsersTable({ refreshTrigger, appOptions }) {
       });
       if (!res.ok) throw new Error(`Status ${res.status}`);
       const json = await res.json();
-      // מניח שה־API מחזיר { tempPassword: 'Abc123!' }
       setTempPassword(json.tempPassword || json.temp_password || '');
     } catch (err) {
       console.error(err);
@@ -107,13 +133,6 @@ export default function UsersTable({ refreshTrigger, appOptions }) {
       setLoadingReset(false);
     }
   };
-
-  // if (loading)
-  //   return (
-  //     <div className="flex items-center justify-center h-screen text-xl text-slate-500">
-  //       Loading...
-  //     </div>
-  //   );
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -433,10 +452,10 @@ export default function UsersTable({ refreshTrigger, appOptions }) {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Allowed Applications
               </label>
-              <div className="space-y-2">
+              <div className="pr-8">
                 {appOptions.map((app) => (
-                  <label key={app.value} className="flex items-center space-x-2">
-                    <input
+                  <FormGroup key={app.value}>
+                    <PermissionSwitch
                       type="checkbox"
                       checked={editedData.allowedApps?.includes(app.value)}
                       onChange={() => {
@@ -449,12 +468,39 @@ export default function UsersTable({ refreshTrigger, appOptions }) {
                           allowedApps: updatedApps,
                         });
                       }}
-                      className="h-4 w-4 text-blue-600 border-gray-300 rounded"
-                    />
-                    <span className="text-sm text-gray-700">{app.label}</span>
-                  </label>
+                      label={app.label}
+                    ></PermissionSwitch>
+                  </FormGroup>
                 ))}
               </div>
+              {/* Invoice Panel Permissions */}
+              {editedData.allowedApps?.includes('/invoice') && (
+                <div className="pl-4 pr-8 pt-6 border-t border-gray-200">
+                  <h3 className="text-medium font-medium text-gray-800 mb-3">
+                    Invoice Panel Permissions
+                  </h3>
+                  <FormGroup className="space-y-2">
+                    <PermissionSwitch 
+                      name="viewFinancials"
+                      checked={permissions.viewFinancials}
+                      onChange={handlePermissionChange}
+                      label="View financial summary"
+                    ></PermissionSwitch>
+                    <PermissionSwitch
+                      name="editInvoices"
+                      checked={permissions.editInvoices}
+                      onChange={handlePermissionChange}
+                      label="edit invoices"
+                    ></PermissionSwitch>
+                    <PermissionSwitch
+                      name="undoInvoice"
+                      checked={permissions.undoInvoice}
+                      onChange={handlePermissionChange}
+                      label="Undo"
+                    ></PermissionSwitch>
+                  </FormGroup>
+                </div>
+              )}
             </div>
 
             <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 rounded-b-xl flex justify-end space-x-3">
@@ -531,7 +577,7 @@ export default function UsersTable({ refreshTrigger, appOptions }) {
 
       {/* Delete Confirmation Modal */}
       {confirmDelete && (
-        <div className="fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 backdrop-blur-xs  bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-md transform transition-all">
             <div className="px-6 py-4">
               <div className="flex items-center">
