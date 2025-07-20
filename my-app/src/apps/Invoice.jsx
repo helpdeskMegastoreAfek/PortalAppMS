@@ -2,12 +2,56 @@ import React, { useState, useEffect, useMemo } from 'react';
 import * as XLSX from 'xlsx';
 import Header from '../components/Header';
 import Sidebar from '../components/Sidebar';
-import { FileDown } from 'lucide-react';
+import { FileDown, CloudDownload, Search } from 'lucide-react';
+import { TextField, InputAdornment } from '@mui/material';
 
 const API_URL = 'http://localhost:3000';
 
 // const transformMongoInvoice = (mongoDoc) => {
 //   const fmtDate = (d) => (d ? new Date(d).toISOString().substring(0, 10) : null);
+
+function SearchInput({ value, onChange }) {
+  return (
+    <TextField
+      variant="outlined"
+      size="small"
+      placeholder="Search..."
+      value={value}
+      onChange={onChange}
+      InputProps={{
+        startAdornment: (
+          <InputAdornment position="start">
+            <SearchIcon />
+          </InputAdornment>
+        ),
+      }}
+    />
+  );
+}
+
+function DateRangePicker({ startDate, endDate, setStartDate, setEndDate }) {
+  return (
+    <div className="flex gap-x-4 mb-4">
+      <TextField
+        label="Start Date"
+        type="date"
+        value={startDate}
+        onChange={(e) => setStartDate(e.target.value)}
+        InputLabelProps={{ shrink: true }}
+        size="small"
+      />
+      <div></div>
+      <TextField
+        label="End Date"
+        type="date"
+        value={endDate}
+        onChange={(e) => setEndDate(e.target.value)}
+        InputLabelProps={{ shrink: true }}
+        size="small"
+      />
+    </div>
+  );
+}
 
 const transformMongoInvoice = (mongoDoc) => ({
   id: mongoDoc._id,
@@ -72,7 +116,7 @@ const DashboardPage = () => {
 
   const [editingInvoice, setEditingInvoice] = useState(null);
   const [editValues, setEditValues] = useState({});
-  const [confirmed, setConfirmed] = useState(new Set());
+  const [confirmed] = useState(new Set());
 
   const isStillMissing = (inv) => hasMissing(inv) && inv.confirmed === false;
 
@@ -82,7 +126,6 @@ const DashboardPage = () => {
       editInvoices: user.permissions?.editInvoices ?? false,
       undoInvoice: user.permissions?.undoInvoice ?? false,
     });
-    
 
     (async () => {
       try {
@@ -167,7 +210,7 @@ const DashboardPage = () => {
       Amount: inv.total_amount,
       Reference: inv.order_reference,
       City: inv.city,
-      'Row Count': inv.item_row_count,
+      RowCount: inv.item_row_count,
     }));
     rows.push({ Filename: 'Net Total', Amount: summary.rawNet });
     const ws = XLSX.utils.json_to_sheet(rows);
@@ -227,7 +270,9 @@ const DashboardPage = () => {
               <CardContent>
                 <p className="text-blue-400">Net Total</p>
                 <p className="text-3xl text-black">₪{summary.net}</p>
-                <p className="text-xs text-black">{summary.cntInv + summary.cntCred} All invoices</p>
+                <p className="text-xs text-black">
+                  {summary.cntInv + summary.cntCred} All invoices
+                </p>
               </CardContent>
             </Card>
           </div>
@@ -235,20 +280,56 @@ const DashboardPage = () => {
 
         <Card>
           <div className="p-4 border-b border-slate-200 flex flex-wrap items-center gap-4">
-            <div className="flex gap-2 ">
+            {/* <div className="flex gap-2 ">
               <Input
-              
                 placeholder="Search..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
+            </div> */}
+            <div className="flex-1 max-w-sm">
+              <TextField
+                size="small"
+                variant="outlined"
+                fullWidth
+                placeholder="Search invoices..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Search />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            </div>
+
+            <div className="flex gap-2">
               <Button className="text-xs" variant="secondary" onClick={exportExcel}>
                 <FileDown />
               </Button>
             </div>
             <div className="flex gap-2">
-              <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
-              <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+              <div className="flex gap-x-4 ">
+                <TextField
+                  label="Start Date"
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  InputLabelProps={{ shrink: true }}
+                  size="small"
+                />
+                <TextField
+                  label="End Date"
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  InputLabelProps={{ shrink: true }}
+                  size="small"
+                />
+              </div>
+
               <Button
                 variant="ghost"
                 onClick={() => {
@@ -381,7 +462,7 @@ const DashboardPage = () => {
                             size="sm"
                             onClick={() => download(inv.filename)}
                           >
-                            Download
+                            <CloudDownload />
                           </Button>
                           {userPermissions.editInvoices && !isEditing && (
                             <Button variant="secondary" size="sm" onClick={() => startEdit(inv)}>
@@ -401,7 +482,7 @@ const DashboardPage = () => {
                                   });
                                   if (!res.ok) throw new Error(res.statusText);
                                   const updated = await res.json();
-                                 
+
                                   setInvoices((prev) =>
                                     prev.map((i) =>
                                       i.id === inv.id ? transformMongoInvoice(updated) : i
@@ -417,7 +498,7 @@ const DashboardPage = () => {
                             </Button>
                           )}
                           {/*Undo */}
-                          {userPermissions.undoInvoice  && inv.confirmed && !isEditing && (
+                          {userPermissions.undoInvoice && inv.confirmed && !isEditing && (
                             <Button
                               variant="secondary"
                               size="sm"
