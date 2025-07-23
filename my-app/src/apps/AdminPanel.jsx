@@ -42,7 +42,6 @@ export default function AdminPanel() {
     return null;
   }
 
-
   const appOptions = [
     { label: 'Main Board (sidebar)', value: '/' },
     { label: 'Meal Ordering', value: '/meal' },

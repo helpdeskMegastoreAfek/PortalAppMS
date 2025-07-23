@@ -480,7 +480,7 @@ export default function UsersTable({ refreshTrigger, appOptions }) {
                     Invoice Panel Permissions
                   </h3>
                   <FormGroup className="space-y-2">
-                    <PermissionSwitch 
+                    <PermissionSwitch
                       name="viewFinancials"
                       checked={permissions.viewFinancials}
                       onChange={handlePermissionChange}

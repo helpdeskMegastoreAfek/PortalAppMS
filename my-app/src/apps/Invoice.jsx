@@ -2,8 +2,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import * as XLSX from 'xlsx';
 import Header from '../components/Header';
 import Sidebar from '../components/Sidebar';
-import { FileDown, CloudDownload, Search } from 'lucide-react';
-import { TextField, InputAdornment } from '@mui/material';
+import { FileDown, CloudDownload, Search, RefreshCw } from 'lucide-react';
+import { TextField, InputAdornment, MenuItem } from '@mui/material';
 
 const API_URL = 'http://localhost:3000';
 
@@ -120,6 +120,9 @@ const DashboardPage = () => {
 
   const isStillMissing = (inv) => hasMissing(inv) && inv.confirmed === false;
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(15);
+
   useEffect(() => {
     setUserPermissions({
       viewFinancials: user.permissions?.viewFinancials ?? false,
@@ -142,6 +145,10 @@ const DashboardPage = () => {
     })();
   }, []);
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, startDate, endDate, itemsPerPage]);
+
   const hasMissing = (inv) =>
     !inv.filename ||
     !inv.invoice_date ||
@@ -149,7 +156,8 @@ const DashboardPage = () => {
     inv.total_amount == 0 ||
     !inv.order_reference ||
     !inv.city ||
-    inv.item_row_count <= 0;
+    inv.item_row_count <= 0 ||
+    inv.city == 'UNKNOWN';
 
   const filtered = useMemo(
     () =>
@@ -199,6 +207,13 @@ const DashboardPage = () => {
     [filtered, confirmed]
   );
 
+  const totalPages = Math.ceil(sortedInvoices.length / itemsPerPage);
+
+  const paginatedInvoices = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return sortedInvoices.slice(startIndex, startIndex + itemsPerPage);
+  }, [sortedInvoices, currentPage, itemsPerPage]);
+
   const anyMissing = useMemo(() => sortedInvoices.some(isStillMissing), [sortedInvoices]);
 
   const download = (fn) => fn && window.open(`${API_URL}/api/invoices/download/${fn}`, '_blank');
@@ -212,7 +227,16 @@ const DashboardPage = () => {
       City: inv.city,
       RowCount: inv.item_row_count,
     }));
-    rows.push({ Filename: 'Net Total', Amount: summary.rawNet });
+
+    const VAT_RATE = 1.18;
+    const totalBeforeVat = summary.rawNet / VAT_RATE;
+    rows.push({});
+    rows.push({
+      Filename: 'Total Before VAT (18%)',
+      Amount: totalBeforeVat,
+    });
+
+    rows.push({ Filename: 'Net Total (incl. VAT)', Amount: summary.rawNet });
     const ws = XLSX.utils.json_to_sheet(rows);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Report');
@@ -245,11 +269,10 @@ const DashboardPage = () => {
     <>
       <Header user={user} />
       <Sidebar user={user} />
-      <div dir="ltr" className="bg-slate-50 min-h-screen p-20">
+      <div dir="ltr" className="bg-slate-50 min-h-screen p-4 sm:p-8 md:p-20">
         <header className="mb-8">
           <h1 className="text-3xl font-bold">Invoices Dashboard</h1>
         </header>
-
         {userPermissions.viewFinancials && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 w-full">
             <Card>
@@ -259,6 +282,7 @@ const DashboardPage = () => {
                 <p className="text-xs">{summary.cntInv} invoices</p>
               </CardContent>
             </Card>
+
             <Card>
               <CardContent className="text-center">
                 <p className="text-red-600">Total Credits</p>
@@ -266,6 +290,7 @@ const DashboardPage = () => {
                 <p className="text-xs">{summary.cntCred} credit notes</p>
               </CardContent>
             </Card>
+
             <Card className="bg-slate-800 text-white text-center">
               <CardContent>
                 <p className="text-blue-400">Net Total</p>
@@ -277,17 +302,9 @@ const DashboardPage = () => {
             </Card>
           </div>
         )}
-
         <Card>
-          <div className="p-4 border-b border-slate-200 flex flex-wrap items-center gap-4">
-            {/* <div className="flex gap-2 ">
-              <Input
-                placeholder="Search..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div> */}
-            <div className="flex-1 max-w-sm">
+          <div className="p-4 border-b border-slate-200 flex flex-col md:flex-row items-stretch md:items-center gap-4">
+            <div className="flex-1 w-full md:max-w-sm">
               <TextField
                 size="small"
                 variant="outlined"
@@ -305,13 +322,8 @@ const DashboardPage = () => {
               />
             </div>
 
-            <div className="flex gap-2">
-              <Button className="text-xs" variant="secondary" onClick={exportExcel}>
-                <FileDown />
-              </Button>
-            </div>
-            <div className="flex gap-2">
-              <div className="flex gap-x-4 ">
+            <div className="flex items-center justify-between flex-wrap gap-4">
+              <div className="flex gap-x-4">
                 <TextField
                   label="Start Date"
                   type="date"
@@ -330,26 +342,170 @@ const DashboardPage = () => {
                 />
               </div>
 
-              <Button
-                variant="ghost"
-                onClick={() => {
-                  setSearchTerm('');
-                  setStartDate('');
-                  setEndDate('');
-                }}
-              >
-                Clear
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button className="text-xs" variant="secondary" onClick={exportExcel}>
+                  <FileDown />
+                </Button>
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    setSearchTerm('');
+                    setStartDate('');
+                    setEndDate('');
+                  }}
+                >
+                  Clear
+                </Button>
+              </div>
             </div>
           </div>
-
           {anyMissing && (
-            <div className="p-4 bg-red-100 text-red-800">
+            <div className="p-4 bg-red-100 text-red-800 text-sm">
               ⚠ There are invoices with missing fields – highlighted in red.
             </div>
           )}
-
-          <div className="overflow-x-auto">
+          <div className="md:hidden">
+            <div className="divide-y divide-slate-200 p-4 space-y-4">
+              {paginatedInvoices.map((inv) => {
+                const missing = isStillMissing(inv);
+                const isEditing = editingInvoice === inv.id;
+                return (
+                  <div
+                    key={inv.id}
+                    className={`pt-4 first:pt-0 ${missing ? 'bg-red-50 p-3 rounded-lg' : ''}`}
+                  >
+                    <div className="flex justify-between items-start mb-2">
+                      <a
+                        href={`${API_URL}/api/invoices/${inv.filename}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-semibold text-indigo-600 truncate pr-2"
+                      >
+                        {inv.filename ? inv.filename.replace(/\.pdf$/i, '') : 'No Filename'}
+                      </a>
+                      <span className="font-bold text-lg whitespace-nowrap">
+                        {inv.total_amount != null ? `₪${inv.total_amount.toFixed(2)}` : '—'}
+                      </span>
+                    </div>
+                    <div className="text-sm text-slate-600 space-y-1 mb-3">
+                      <p>
+                        <strong>Date:</strong> {inv.invoice_date || '—'}
+                      </p>
+                      <p>
+                        <strong>Reference:</strong> {inv.order_reference || '—'}
+                      </p>
+                      <p>
+                        <strong>City:</strong> {inv.city || '—'}
+                      </p>
+                    </div>
+                    <div className="flex items-center justify-end flex-wrap gap-2 mt-3">
+                      <Button variant="secondary" size="sm" onClick={() => download(inv.filename)}>
+                        <CloudDownload />
+                      </Button>
+                      {userPermissions.editInvoices && !isEditing && (
+                        <Button variant="secondary" size="sm" onClick={() => startEdit(inv)}>
+                          Edit
+                        </Button>
+                      )}
+                      {userPermissions.editInvoices && missing && !isEditing && (
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={async () => {
+                            try {
+                              const res = await fetch(`${API_URL}/api/invoices/${inv.id}`, {
+                                method: 'PUT',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ confirmed: true }),
+                              });
+                              if (!res.ok) throw new Error(res.statusText);
+                              const updated = await res.json();
+                              setInvoices((prev) =>
+                                prev.map((i) =>
+                                  i.id === inv.id ? transformMongoInvoice(updated) : i
+                                )
+                              );
+                            } catch (e) {
+                              console.error(e);
+                              alert('Error confirming invoice');
+                            }
+                          }}
+                        >
+                          Confirm
+                        </Button>
+                      )}
+                      {userPermissions.undoInvoice && inv.confirmed && !isEditing && (
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={async () => {
+                            try {
+                              const res = await fetch(`${API_URL}/api/invoices/${inv.id}`, {
+                                method: 'PUT',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ confirmed: false }),
+                              });
+                              if (!res.ok) throw new Error(res.statusText);
+                              const updated = await res.json();
+                              setInvoices((prev) =>
+                                prev.map((i) =>
+                                  i.id === inv.id ? transformMongoInvoice(updated) : i
+                                )
+                              );
+                            } catch (e) {
+                              console.error(e);
+                              alert('Error undoing confirmation');
+                            }
+                          }}
+                        >
+                          Undo
+                        </Button>
+                      )}
+                      {isEditing && (
+                        <>
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            onClick={async () => {
+                              try {
+                                const res = await fetch(`${API_URL}/api/invoices/${inv.id}`, {
+                                  method: 'PUT',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify(editValues),
+                                });
+                                if (!res.ok) throw new Error(res.statusText);
+                                const updated = await res.json();
+                                setInvoices((prev) =>
+                                  prev.map((i) =>
+                                    i.id === inv.id ? transformMongoInvoice(updated) : i
+                                  )
+                                );
+                              } catch (e) {
+                                console.error(e);
+                                alert('Error saving invoice');
+                              } finally {
+                                setEditingInvoice(null);
+                              }
+                            }}
+                          >
+                            Save
+                          </Button>
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => setEditingInvoice(null)}
+                          >
+                            Cancel
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+          <div className="hidden md:block overflow-x-auto">
             <table className="min-w-full divide-y divide-slate-200 text-sm text-left">
               <thead className="bg-slate-100 text-center">
                 <tr>
@@ -363,7 +519,7 @@ const DashboardPage = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-center">
-                {sortedInvoices.map((inv) => {
+                {paginatedInvoices.map((inv) => {
                   const missing = isStillMissing(inv);
                   const isEditing = editingInvoice === inv.id;
                   return (
@@ -456,7 +612,7 @@ const DashboardPage = () => {
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center justify-center gap-2">
+                        <div className="flex items-center justify-center flex-wrap gap-2">
                           <Button
                             variant="secondary"
                             size="sm"
@@ -482,7 +638,6 @@ const DashboardPage = () => {
                                   });
                                   if (!res.ok) throw new Error(res.statusText);
                                   const updated = await res.json();
-
                                   setInvoices((prev) =>
                                     prev.map((i) =>
                                       i.id === inv.id ? transformMongoInvoice(updated) : i
@@ -497,7 +652,6 @@ const DashboardPage = () => {
                               Confirm
                             </Button>
                           )}
-                          {/*Undo */}
                           {userPermissions.undoInvoice && inv.confirmed && !isEditing && (
                             <Button
                               variant="secondary"
@@ -525,7 +679,6 @@ const DashboardPage = () => {
                               Undo
                             </Button>
                           )}
-
                           {isEditing && (
                             <>
                               <Button
@@ -572,6 +725,49 @@ const DashboardPage = () => {
               </tbody>
             </table>
           </div>
+          {totalPages > 1 && (
+            <div className="p-4 border-t border-slate-200 flex flex-col md:flex-row items-center justify-between gap-4">
+              <div className="flex items-center flex-wrap justify-center gap-4 text-sm text-slate-600">
+                <span>
+                  Page {currentPage} of {totalPages}
+                </span>
+                <TextField
+                  select
+                  label="Per Page"
+                  value={itemsPerPage}
+                  onChange={(e) => setItemsPerPage(Number(e.target.value))}
+                  size="small"
+                  variant="outlined"
+                  sx={{ minWidth: 100 }}
+                >
+                  {[15, 25, 50, 100, 500, 1000].map((option) => (
+                    <MenuItem key={option} value={option}>
+                      {option}
+                    </MenuItem>
+                  ))}
+                </TextField>
+                <span>(Total {sortedInvoices.length} invoices)</span>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                >
+                  Previous
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage >= totalPages}
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
+          )}
         </Card>
       </div>
     </>
