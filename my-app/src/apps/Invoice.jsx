@@ -7,9 +7,6 @@ import { TextField, InputAdornment, MenuItem } from '@mui/material';
 
 const API_URL = 'http://localhost:3000';
 
-// const transformMongoInvoice = (mongoDoc) => {
-//   const fmtDate = (d) => (d ? new Date(d).toISOString().substring(0, 10) : null);
-
 function SearchInput({ value, onChange }) {
   return (
     <TextField
@@ -364,6 +361,8 @@ const DashboardPage = () => {
               ⚠ There are invoices with missing fields – highlighted in red.
             </div>
           )}
+
+          {/*Mobile*/}
           <div className="md:hidden">
             <div className="divide-y divide-slate-200 p-4 space-y-4">
               {paginatedInvoices.map((inv) => {
@@ -505,6 +504,8 @@ const DashboardPage = () => {
               })}
             </div>
           </div>
+
+          {/* Desktop */}
           <div className="hidden md:block overflow-x-auto">
             <table className="min-w-full divide-y divide-slate-200 text-sm text-left">
               <thead className="bg-slate-100 text-center">
