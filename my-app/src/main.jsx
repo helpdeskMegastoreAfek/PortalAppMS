@@ -1,8 +1,9 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+import './i18n';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import EmployeePortal from './apps/mainbord';
-import MealOrdering from './apps/MealOrdering';
+// import MealOrdering from './apps/MealOrdering';
 import BoxInventory from './apps/BoxInventory';
 import ITSupport from './apps/ITSupport';
 import Service from './apps/ServiceTickets';
@@ -20,7 +21,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/" element={<EmployeePortal />} />
-        <Route path="/meal" element={<MealOrdering />} />
+        {/* <Route path="/meal" element={<MealOrdering />} /> */}
         <Route path="/boxes" element={<BoxInventory />} />
         <Route path="/it" element={<ITSupport />} />
         <Route path="/service" element={<Service />} />
