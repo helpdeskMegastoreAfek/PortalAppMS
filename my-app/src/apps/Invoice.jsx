@@ -2,8 +2,9 @@ import React, { useState, useEffect, useMemo } from 'react';
 import * as XLSX from 'xlsx';
 import Header from '../components/Header';
 import Sidebar from '../components/Sidebar';
-import { FileDown, CloudDownload, Search, RefreshCw } from 'lucide-react';
+import { FileDown, CloudDownload, Search} from 'lucide-react';
 import { TextField, InputAdornment, MenuItem } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 
 const API_URL = 'http://localhost:3000';
 
@@ -119,6 +120,11 @@ const DashboardPage = () => {
 
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(15);
+
+  const { t, i18n } = useTranslation();
+  const headerStyle = {
+    textAlign: i18n.language === 'he' ? 'right' : 'left',
+  };
 
   useEffect(() => {
     setUserPermissions({
@@ -251,6 +257,8 @@ const DashboardPage = () => {
     });
   };
 
+  const tableHeaderKeys = ['file', 'date', 'amount', 'reference', 'city', 'rowCount', 'actions'];
+
   if (loading)
     return (
       <div className="flex items-center justify-center h-screen text-xl text-slate-500">
@@ -266,47 +274,56 @@ const DashboardPage = () => {
     <>
       <Header user={user} />
       <Sidebar user={user} />
-      <div dir="ltr" className="bg-slate-50 min-h-screen p-4 sm:p-8 md:p-20">
-        <header className="mb-8">
-          <h1 className="text-3xl font-bold">Invoices Dashboard</h1>
+      <div className="bg-slate-50 min-h-screen p-4  ml-15">
+        <header className="mb-8 text-start">
+          <h1 style={headerStyle} className="text-3xl font-bold text-start">
+            {t('invoicesDashboard')}
+          </h1>
         </header>
         {userPermissions.viewFinancials && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 w-full">
             <Card>
               <CardContent className="text-center">
-                <p className="text-green-600">Total Income</p>
+                <p className="text-green-600">{t('totalIncome')}</p>
                 <p className="text-3xl">₪{summary.inc}</p>
-                <p className="text-xs">{summary.cntInv} invoices</p>
+                <p className="text-xs">
+                  {summary.cntInv} {t('invoices')}
+                </p>
               </CardContent>
             </Card>
 
             <Card>
               <CardContent className="text-center">
-                <p className="text-red-600">Total Credits</p>
+                <p className="text-red-600">{t('totalCredits')}</p>
                 <p className="text-3xl">₪{summary.cred}</p>
-                <p className="text-xs">{summary.cntCred} credit notes</p>
+                <p className="text-xs">
+                  {summary.cntCred} {t('creditNotes')}
+                </p>
               </CardContent>
             </Card>
 
             <Card className="bg-slate-800 text-white text-center">
               <CardContent>
-                <p className="text-blue-400">Net Total</p>
+                <p className="text-blue-400">{t('netTotal')}</p>
                 <p className="text-3xl text-black">₪{summary.net}</p>
                 <p className="text-xs text-black">
-                  {summary.cntInv + summary.cntCred} All invoices
+                  {sortedInvoices.length} {t('allInvoices')}
                 </p>
               </CardContent>
             </Card>
           </div>
         )}
         <Card>
-          <div className="p-4 border-b border-slate-200 flex flex-col md:flex-row items-stretch md:items-center gap-4">
+          <div
+            style={headerStyle}
+            className="p-4 border-b border-slate-200 flex flex-col md:flex-row items-stretch md:items-center gap-4"
+          >
             <div className="flex-1 w-full md:max-w-sm">
               <TextField
                 size="small"
                 variant="outlined"
                 fullWidth
-                placeholder="Search invoices..."
+                placeholder={t('searchInvoices')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 InputProps={{
@@ -322,7 +339,7 @@ const DashboardPage = () => {
             <div className="flex items-center justify-between flex-wrap gap-4">
               <div className="flex gap-x-4">
                 <TextField
-                  label="Start Date"
+                  label={t('startDate')}
                   type="date"
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
@@ -330,7 +347,7 @@ const DashboardPage = () => {
                   size="small"
                 />
                 <TextField
-                  label="End Date"
+                  label={t('endDate')}
                   type="date"
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
@@ -351,14 +368,14 @@ const DashboardPage = () => {
                     setEndDate('');
                   }}
                 >
-                  Clear
+                  {t('clear')}
                 </Button>
               </div>
             </div>
           </div>
           {anyMissing && (
-            <div className="p-4 bg-red-100 text-red-800 text-sm">
-              ⚠ There are invoices with missing fields – highlighted in red.
+            <div style={headerStyle} className="p-4 bg-red-100 text-red-800 text-sm">
+              ⚠ {t('alertInvoice')}
             </div>
           )}
 
@@ -386,15 +403,15 @@ const DashboardPage = () => {
                         {inv.total_amount != null ? `₪${inv.total_amount.toFixed(2)}` : '—'}
                       </span>
                     </div>
-                    <div className="text-sm text-slate-600 space-y-1 mb-3">
+                    <div style={headerStyle} className="text-sm text-slate-600 space-y-1 mb-3">
                       <p>
-                        <strong>Date:</strong> {inv.invoice_date || '—'}
+                        <strong>{t('date')}:</strong> {inv.invoice_date || '—'}
                       </p>
                       <p>
-                        <strong>Reference:</strong> {inv.order_reference || '—'}
+                        <strong>{t('reference')}:</strong> {inv.order_reference || '—'}
                       </p>
                       <p>
-                        <strong>City:</strong> {inv.city || '—'}
+                        <strong>{t('city')}:</strong> {inv.city || '—'}
                       </p>
                     </div>
                     <div className="flex items-center justify-end flex-wrap gap-2 mt-3">
@@ -403,7 +420,7 @@ const DashboardPage = () => {
                       </Button>
                       {userPermissions.editInvoices && !isEditing && (
                         <Button variant="secondary" size="sm" onClick={() => startEdit(inv)}>
-                          Edit
+                          {t('edit')}
                         </Button>
                       )}
                       {userPermissions.editInvoices && missing && !isEditing && (
@@ -430,7 +447,7 @@ const DashboardPage = () => {
                             }
                           }}
                         >
-                          Confirm
+                          {t('confirm')}
                         </Button>
                       )}
                       {userPermissions.undoInvoice && inv.confirmed && !isEditing && (
@@ -457,7 +474,7 @@ const DashboardPage = () => {
                             }
                           }}
                         >
-                          Undo
+                          {t('undo')}
                         </Button>
                       )}
                       {isEditing && (
@@ -487,14 +504,14 @@ const DashboardPage = () => {
                               }
                             }}
                           >
-                            Save
+                            {t('save')}
                           </Button>
                           <Button
                             variant="secondary"
                             size="sm"
                             onClick={() => setEditingInvoice(null)}
                           >
-                            Cancel
+                            {t('cancel')}
                           </Button>
                         </>
                       )}
@@ -510,13 +527,11 @@ const DashboardPage = () => {
             <table className="min-w-full divide-y divide-slate-200 text-sm text-left">
               <thead className="bg-slate-100 text-center">
                 <tr>
-                  {['File', 'Date', 'Amount', 'Reference', 'City', 'Row Count', 'Actions'].map(
-                    (h) => (
-                      <th key={h} className="px-6 py-3 font-medium uppercase text-slate-600">
-                        {h}
-                      </th>
-                    )
-                  )}
+                  {tableHeaderKeys.map((headerKey) => (
+                    <th key={headerKey} className="px-6 py-3 font-medium uppercase text-slate-600">
+                      {t(headerKey)}
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-center">
@@ -623,7 +638,7 @@ const DashboardPage = () => {
                           </Button>
                           {userPermissions.editInvoices && !isEditing && (
                             <Button variant="secondary" size="sm" onClick={() => startEdit(inv)}>
-                              Edit
+                              {t('edit')}
                             </Button>
                           )}
                           {userPermissions.editInvoices && missing && !isEditing && (
@@ -650,7 +665,7 @@ const DashboardPage = () => {
                                 }
                               }}
                             >
-                              Confirm
+                              {t('confirm')}
                             </Button>
                           )}
                           {userPermissions.undoInvoice && inv.confirmed && !isEditing && (
@@ -677,7 +692,7 @@ const DashboardPage = () => {
                                 }
                               }}
                             >
-                              Undo
+                              {t('undo')}
                             </Button>
                           )}
                           {isEditing && (
@@ -707,14 +722,14 @@ const DashboardPage = () => {
                                   }
                                 }}
                               >
-                                Save
+                                {t('save')}
                               </Button>
                               <Button
                                 variant="secondary"
                                 size="sm"
                                 onClick={() => setEditingInvoice(null)}
                               >
-                                Cancel
+                                {t('cancel')}
                               </Button>
                             </>
                           )}
@@ -730,11 +745,11 @@ const DashboardPage = () => {
             <div className="p-4 border-t border-slate-200 flex flex-col md:flex-row items-center justify-between gap-4">
               <div className="flex items-center flex-wrap justify-center gap-4 text-sm text-slate-600">
                 <span>
-                  Page {currentPage} of {totalPages}
+                  {t('page')} {currentPage} {t('of')} {totalPages}
                 </span>
                 <TextField
                   select
-                  label="Per Page"
+                  label={t('perPage')}
                   value={itemsPerPage}
                   onChange={(e) => setItemsPerPage(Number(e.target.value))}
                   size="small"
@@ -747,7 +762,9 @@ const DashboardPage = () => {
                     </MenuItem>
                   ))}
                 </TextField>
-                <span>(Total {sortedInvoices.length} invoices)</span>
+                <span>
+                  ({t('total')} {sortedInvoices.length} {t('invoices')})
+                </span>
               </div>
               <div className="flex gap-2">
                 <Button
@@ -756,7 +773,7 @@ const DashboardPage = () => {
                   onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
                   disabled={currentPage === 1}
                 >
-                  Previous
+                  {t('previous')}
                 </Button>
                 <Button
                   variant="outline"
@@ -764,7 +781,7 @@ const DashboardPage = () => {
                   onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
                   disabled={currentPage >= totalPages}
                 >
-                  Next
+                  {t('next')}
                 </Button>
               </div>
             </div>
