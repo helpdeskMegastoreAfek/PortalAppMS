@@ -5,6 +5,8 @@ import { saveAs } from 'file-saver';
 import Papa from 'papaparse';
 import { Switch, FormControlLabel, FormGroup } from '@mui/material';
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 function PermissionSwitch({ name, checked, onChange, label }) {
   return (
     <FormControlLabel
@@ -49,7 +51,7 @@ export default function UsersTable({ refreshTrigger, appOptions }) {
   };
 
   useEffect(() => {
-    fetch('http://localhost:3000/api/getUsers')
+    fetch(`${API_URL}/api/getUsers`)
       .then((res) => res.json())
       .then((data) => setUsers(data));
   }, [refreshTrigger]);
@@ -73,7 +75,7 @@ export default function UsersTable({ refreshTrigger, appOptions }) {
   };
 
   const handleSaveEdit = async () => {
-    const res = await fetch(`http://localhost:3000/api/getUsers/${editingUser._id}`, {
+    const res = await fetch(`${API_URL}/api/getUsers/${editingUser._id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(editedData),
@@ -95,7 +97,7 @@ export default function UsersTable({ refreshTrigger, appOptions }) {
       }
     }
 
-    const res = await fetch(`http://localhost:3000/api/getUsers/${id}`, {
+    const res = await fetch(`${API_URL}/api/getUsers/${id}`, {
       method: 'DELETE',
     });
 
@@ -118,7 +120,7 @@ export default function UsersTable({ refreshTrigger, appOptions }) {
     setLoadingReset(true);
     setErrorReset('');
     try {
-      const res = await fetch('http://localhost:3000/api/auth/resetPassword', {
+      const res = await fetch(`${API_URL}/api/auth/resetPassword`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: resetUser._id }),

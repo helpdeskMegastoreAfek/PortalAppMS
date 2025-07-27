@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import Header from '../components/Header';
 import Sidebar from '../components/Sidebar';
 import { Package, Thermometer, TrendingUp, TrendingDown, Users, Download } from 'lucide-react';
+const API_URL = import.meta.env.VITE_API_URL;
 
 export default function AdminBoxInventory() {
   const user = JSON.parse(localStorage.getItem('user'));
@@ -14,7 +15,7 @@ export default function AdminBoxInventory() {
   useEffect(() => {
     const fetchInventory = async () => {
       try {
-        const res = await fetch('http://localhost:3000/api/inventory');
+        const res = await fetch(`${API_URL}/api/inventory`);
         const data = await res.json();
 
         const formatted = data.map((item) => ({

@@ -6,7 +6,7 @@ import { FileDown, CloudDownload, Search} from 'lucide-react';
 import { TextField, InputAdornment, MenuItem } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 
-const API_URL = 'http://localhost:3000';
+const API_URL = import.meta.env.VITE_API_URL;
 
 function SearchInput({ value, onChange }) {
   return (
