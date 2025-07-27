@@ -5,6 +5,8 @@ import Header from '../components/Header';
 import Sidebar from '../components/Sidebar';
 import { Package, Thermometer, Plus, Minus, Save } from 'lucide-react';
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 const inventoryItems = [
   {
     id: 'boxes',
@@ -53,7 +55,7 @@ export default function BoxInventory() {
     setIsSubmitting(true);
 
     await toast.promise(
-      fetch('http://localhost:3000/api/inventory', {
+      fetch(`${API_URL}/api/inventory`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -1,5 +1,7 @@
 import { useState } from 'react';
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 export default function ChangePasswordModal({ onClose }) {
   const user = JSON.parse(localStorage.getItem('user'));
   const userId = user?._id;
@@ -14,7 +16,7 @@ export default function ChangePasswordModal({ onClose }) {
       return;
     }
 
-    const res = await fetch('http://localhost:3000/api/auth/changePassword', {
+    const res = await fetch(`${API_URL}/api/auth/changePassword`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',

@@ -9,6 +9,8 @@ import Sidebar from '../components/Sidebar';
 import toast, { Toaster } from 'react-hot-toast';
 import { Switch, FormControlLabel, FormGroup } from '@mui/material';
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 function PermissionSwitch({ name, checked, onChange, label }) {
   return (
     <FormControlLabel
@@ -84,7 +86,7 @@ export default function AdminPanel() {
     console.log('Sending this payload to server:', permissionLoad);
 
     toast.promise(
-      fetch('http://localhost:3000/api/auth/register', {
+      fetch(`${API_URL}/api/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(permissionLoad),

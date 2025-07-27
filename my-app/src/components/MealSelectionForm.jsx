@@ -1,6 +1,6 @@
 import React from 'react';
 import { Check, Circle, ChevronRight } from 'lucide-react';
-import MealOptionCard from './MealOptionCard'; // ודא שקובץ זה קיים
+import MealOptionCard from './MealOptionCard'; 
 
 const MealSelectionForm = ({
   days,
