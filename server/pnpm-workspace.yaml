@@ -3,3 +3,4 @@ ignoredBuiltDependencies:
   - opencv-build
   - opencv4nodejs
   - protobufjs
+  - sharp
