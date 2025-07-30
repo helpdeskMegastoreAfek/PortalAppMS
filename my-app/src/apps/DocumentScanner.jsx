@@ -12,15 +12,15 @@ const LoadingSpinner = ({ text = 'Analyzing Document...' }) => (
 function DocumentScanner({ imageSrc, onProcessComplete }) {
   const canvasRef = useRef(null);
   const imageRef = useRef(new Image());
-  const [model, setModel] = useState(null); // מודל ה-ML
-  const [cv, setCv] = useState(null); // ספריית OpenCV
+  const [model, setModel] = useState(null); 
+  const [cv, setCv] = useState(null); 
   const [isLoading, setIsLoading] = useState(true);
   const [loadingText, setLoadingText] = useState('Loading AI & CV Libraries...');
   const [corners, setCorners] = useState([]);
   const [draggingPointIndex, setDraggingPointIndex] = useState(null);
   const [error, setError] = useState('');
 
-  // טעינת הספריות במקביל
+
   useEffect(() => {
     let modelLoaded = false;
     let cvLoaded = false;
@@ -63,7 +63,6 @@ function DocumentScanner({ imageSrc, onProcessComplete }) {
     }
   }, []);
 
-  // פונקציית ציור כללית
   const draw = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas || !imageRef.current.src || corners.length !== 4) return;
@@ -91,7 +90,6 @@ function DocumentScanner({ imageSrc, onProcessComplete }) {
     });
   }, [corners, draggingPointIndex]);
 
-  // אפקט ראשי: טוען תמונה ומפעיל זיהוי
   useEffect(() => {
     if (!imageSrc || !model || !cv) {
       if (imageSrc && (!model || !cv)) {
@@ -152,7 +150,6 @@ function DocumentScanner({ imageSrc, onProcessComplete }) {
     draw();
   }, [corners, draw]);
 
-  // --- לוגיקת גרירה ---
   const getMousePos = (e) => {
     const canvas = canvasRef.current;
     const rect = canvas.getBoundingClientRect();
@@ -291,7 +288,6 @@ function DocumentScanner({ imageSrc, onProcessComplete }) {
   );
 }
 
-// פונקציית מיון הפינות המשופרת
 function sortCorners(corners) {
   if (corners.length !== 4) return { tl: 0, tr: 0, br: 0, bl: 0 };
   const center = corners.reduce(
