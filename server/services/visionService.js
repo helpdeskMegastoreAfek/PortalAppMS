@@ -1,5 +1,5 @@
 const vision = require('@google-cloud/vision');
-const cv = require('opencv4nodejs');
+const sharp = require('sharp'); // ייבוא של sharp
 const fs = require('fs').promises;
 const path = require('path');
 
@@ -7,7 +7,7 @@ const client = new vision.ImageAnnotatorClient();
 
 async function processAndCropImage(imagePath) {
     try {
-        console.log(`[Vision Service] Sending ${imagePath} to Google Vision API...`);
+        console.log(`[Vision Service] Sending ${path.basename(imagePath)} to Google Vision API...`);
         const [result] = await client.documentTextDetection(imagePath);
         const fullTextAnnotation = result.fullTextAnnotation;
         if (!fullTextAnnotation || !fullTextAnnotation.pages.length) {
@@ -15,38 +15,38 @@ async function processAndCropImage(imagePath) {
         }
         console.log("[Vision Service] Google Vision API responded.");
         const extractedText = fullTextAnnotation.text;
+        
+        // 1. קבלת הפינות מגוגל
         const vertices = fullTextAnnotation.pages[0].blocks[0].boundingBox.vertices;
-        const corners = vertices.map(v => new cv.Point2(v.x, v.y));
-        const originalImage = await cv.imreadAsync(imagePath);
-        const width = Math.max(
-            Math.hypot(corners[1].x - corners[0].x, corners[1].y - corners[0].y),
-            Math.hypot(corners[2].x - corners[3].x, corners[2].y - corners[3].y)
-        );
-        const height = Math.max(
-            Math.hypot(corners[3].x - corners[0].x, corners[3].y - corners[0].y),
-            Math.hypot(corners[2].x - corners[1].x, corners[2].y - corners[1].y)
-        );
-        const targetCorners = [
-            new cv.Point2(0, 0),
-            new cv.Point2(width - 1, 0),
-            new cv.Point2(width - 1, height - 1),
-            new cv.Point2(0, height - 1)
-        ];
-        const transform = cv.getPerspectiveTransform(corners, targetCorners);
-        const warpedImage = await originalImage.warpPerspectiveAsync(transform, new cv.Size(width, height));
+        
+        // 2. חישוב המלבן החוסם (Bounding Box)
+        const left = Math.min(...vertices.map(v => v.x));
+        const top = Math.min(...vertices.map(v => v.y));
+        const right = Math.max(...vertices.map(v => v.x));
+        const bottom = Math.max(...vertices.map(v => v.y));
+
+        const width = Math.round(right - left);
+        const height = Math.round(bottom - top);
+
+        // 3. חיתוך התמונה באמצעות sharp
         const outputDir = path.join(path.dirname(imagePath), '../processed');
         await fs.mkdir(outputDir, { recursive: true });
-        const outputFilename = `cropped-${path.basename(imagePath)}`;
+        const outputFilename = `processed-${path.basename(imagePath)}`;
         const outputPath = path.join(outputDir, outputFilename);
-        await cv.imwriteAsync(outputPath, warpedImage);
-        console.log(`[Vision Service] Cropped image saved to ${outputPath}`);
+
+        await sharp(imagePath)
+            .extract({ left: Math.round(left), top: Math.round(top), width: width, height: height })
+            .toFile(outputPath);
+
+        console.log(`[Vision Service] Cropped (rectangular) image saved to: ${outputPath}`);
+
         return {
             extractedText,
-            croppedImagePath: outputPath
+            processedImagePath: outputPath
         };
     } catch (error) {
         console.error("[Vision Service] Error:", error);
-        throw new Error("Failed during Google Vision processing.");
+        throw new Error("Failed during Google Vision processing and cropping.");
     }
 }
 

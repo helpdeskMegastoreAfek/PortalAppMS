@@ -33,8 +33,8 @@ app.use("/api/meals", mealsRoutes);
 const invoiceRoutes = require('./routes/invoices');
 app.use("/api/invoices", invoiceRoutes);
 
-// const uploadRoutes = require('./routes/uploadRoutes');
-// app.use("/api/upload", uploadRoutes);
+const uploadRoutes = require('./routes/uploadRoutes');
+app.use("/api/upload", uploadRoutes);
 
 
 mongoose
