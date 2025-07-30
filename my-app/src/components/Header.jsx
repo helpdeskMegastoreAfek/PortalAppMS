@@ -34,13 +34,15 @@ export default function Header({ user }) {
 
   return (
     <>
-      <header className="flex justify-between items-center px-6 py-4 border-b border-gray-200 bg-white">
+      <header className="flex justify-between items-center px-6 py-4 border-b border-gray-200 bg-white sticky  top-0 right-0 left-0">
         <div className="text-lg font-light text-gray-900 ml-11">{t('dashboard')}</div>
 
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-2 text-sm text-gray-600">
             <User className="w-4 h-4" />
-            <span>{user?.username}</span>
+            <span>
+              {user?.username} ({user?.role})
+            </span>
           </div>
 
           <div className="relative" ref={menuRef}>

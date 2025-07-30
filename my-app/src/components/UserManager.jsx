@@ -36,6 +36,7 @@ export default function UsersTable({ refreshTrigger, appOptions }) {
     viewFinancials: false,
     editInvoices: false,
     undoInvoice: false,
+    deleteInvoices: false,
   };
 
   // handler לשינוי של checkboxes
@@ -492,13 +493,19 @@ export default function UsersTable({ refreshTrigger, appOptions }) {
                       name="editInvoices"
                       checked={permissions.editInvoices}
                       onChange={handlePermissionChange}
-                      label="edit invoices"
+                      label="Edit invoices"
                     ></PermissionSwitch>
                     <PermissionSwitch
                       name="undoInvoice"
                       checked={permissions.undoInvoice}
                       onChange={handlePermissionChange}
                       label="Undo"
+                    ></PermissionSwitch>
+                    <PermissionSwitch
+                      name="deleteInvoices"
+                      checked={permissions.deleteInvoices}
+                      onChange={handlePermissionChange}
+                      label="Delete invoices (Only Developers)"
                     ></PermissionSwitch>
                   </FormGroup>
                 </div>

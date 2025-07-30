@@ -2,11 +2,8 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './i18n';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-
-// MUI Date Picker Imports - מוסיפים את השורות האלה
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-
 // Your App Components
 import EmployeePortal from './apps/mainbord';
 // import MealOrdering from './apps/MealOrdering';
@@ -18,6 +15,7 @@ import AdminPanel from './apps/AdminPanel';
 import AdminBoxInventory from './apps/AdminBoxInventory';
 import Invoice from './apps/invoice';
 // import AdminMealOrdering from "./apps/AdminMealOrdering";
+import InvoiceUploader from './components/InvoiceUploader';
 
 import './index.css';
 
@@ -36,6 +34,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
           <Route path="/admin" element={<AdminPanel />} />
           <Route path="/invoice" element={<Invoice />} />
           {/* <Route path="/adminMeal" element={<AdminMealOrdering />} /> */}
+          <Route path="/invoiceUploader" element={<InvoiceUploader />} />
         </Routes>
       </BrowserRouter>
     </LocalizationProvider>

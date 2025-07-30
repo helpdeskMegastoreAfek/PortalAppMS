@@ -75,10 +75,11 @@ export default function Sidebar({ user }) {
   const regularLinks = appLinks.filter((app) => !app.adminOnly);
 
   const filteredRegularLinks = regularLinks.filter(
-    (app) => user?.role === 'admin' || user?.allowedApps?.includes(app.path)
+    (app) => user?.role === 'admin' && user?.role === 'developer' || user?.allowedApps?.includes(app.path)
   );
 
-  const shouldShowAdminLink = user?.role === 'admin' && adminLink;
+  const shouldShowAdminLink = user?.role === 'admin' && adminLink ||
+   user?.role === 'developer' && adminLink;
 
   return (
     <>

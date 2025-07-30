@@ -39,7 +39,7 @@ export default function AdminPanel() {
   });
 
   const user = JSON.parse(localStorage.getItem('user'));
-  if (user?.role !== 'admin') {
+  if (user?.role !== 'admin' && user?.role !== 'developer') {
     window.location.href = '/';
     return null;
   }
@@ -83,7 +83,7 @@ export default function AdminPanel() {
       permissions,
     };
 
-    console.log('Sending this payload to server:', permissionLoad);
+    // console.log('Sending this payload to server:', permissionLoad);
 
     toast.promise(
       fetch(`${API_URL}/api/auth/register`, {
@@ -193,6 +193,7 @@ export default function AdminPanel() {
                   >
                     <option value="user">User</option>
                     <option value="admin">Admin</option>
+                    <option value="developer">Developer</option>
                   </select>
                 </div>
 
@@ -263,6 +264,12 @@ export default function AdminPanel() {
                         onChange={handlePermissionChange}
                         label="Undo"
                       ></PermissionSwitch>
+                      <PermissionSwitch
+                      name="deleteInvoices"
+                      checked={permissions.deleteInvoices}
+                      onChange={handlePermissionChange}
+                      label="Delete invoices (Only Developers)"
+                    ></PermissionSwitch>
                     </FormGroup>
                   </div>
                 </div>
