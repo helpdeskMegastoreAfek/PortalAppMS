@@ -1,2 +1,5 @@
 ignoredBuiltDependencies:
   - bcrypt
+  - opencv-build
+  - opencv4nodejs
+  - protobufjs

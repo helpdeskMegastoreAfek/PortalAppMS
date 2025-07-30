@@ -8,26 +8,27 @@ import {
   ArrowRight,
   PackageOpen,
   File,
+  Camera,
 } from 'lucide-react';
 
 export default function EmployeePortal() {
   const user = JSON.parse(localStorage.getItem('user'));
 
   const apps = [
-    // {
-    //   title: 'Meal Ordering',
-    //   description: 'Order your daily meals for the workweek',
-    //   icon: <Utensils className="w-6 h-6" />,
-    //   link: '/meal',
-    //   accent: 'border-l-orange-400',
-    // },
-    // {
-    //   title: 'Admin Meal Ordering',
-    //   description: 'Manage daily meals for the workweek',
-    //   icon: <Utensils className="w-6 h-6" />,
-    //   link: '/adminMeal',
-    //   accent: 'border-l-orange-400',
-    // },
+    {
+      title: 'Meal Ordering',
+      description: 'Order your daily meals for the workweek',
+      icon: <Utensils className="w-6 h-6" />,
+      link: '/meal',
+      accent: 'border-l-orange-400',
+    },
+    {
+      title: 'Admin Meal Ordering',
+      description: 'Manage daily meals for the workweek',
+      icon: <Utensils className="w-6 h-6" />,
+      link: '/adminMeal',
+      accent: 'border-l-orange-400',
+    },
     {
       title: 'Box & Cooler Inventory',
       description: 'Track boxes and coolers inventory',
@@ -64,6 +65,13 @@ export default function EmployeePortal() {
       accent: 'border-l-yellow-400',
     },
     {
+      title: 'Scanner',
+      description: 'Document Scanner imag to data and PDF',
+      icon: <Camera className="w-6 h-6" />,
+      link: '/invoiceUploader',
+      accent: 'border-l-lime-400',
+    },
+    {
       title: 'Admin Panel',
       description: 'Add and manage user access',
       icon: <ShieldCheck className="w-6 h-6" />,
@@ -74,8 +82,12 @@ export default function EmployeePortal() {
   ];
 
   const filteredApps = apps.filter((app) => {
-    if (app.adminOnly && user?.role !== 'admin') return false;
-    return user?.role === 'admin' || user?.allowedApps?.includes(app.link);
+    if (app.adminOnly && user?.role !== 'admin' && app.adminOnly && user?.role !== 'developer')
+      return false;
+    return (
+      (user?.role === 'admin' && user?.role === 'developer') ||
+      user?.allowedApps?.includes(app.link)
+    );
   });
 
   return (

@@ -3,9 +3,8 @@ import { useState, useEffect } from 'react';
 import Header from '../components/Header';
 import Sidebar from '../components/Sidebar';
 import toast, { Toaster } from 'react-hot-toast';
-import MealSelectionForm from '../components/MealSelectionForm'; // ייבוא קומפוננטת הטופס
+import MealSelectionForm from '../components/MealSelectionForm';
 
-// --- קבועים ---
 const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu'];
 // const options = {
 //   main: ['Chicken', 'Beef', 'Fish', 'Vegan'],

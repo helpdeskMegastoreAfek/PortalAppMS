@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import * as XLSX from 'xlsx';
 import Header from '../components/Header';
 import Sidebar from '../components/Sidebar';
-import { FileDown, CloudDownload, Search} from 'lucide-react';
+import { FileDown, CloudDownload, Search, Trash2 } from 'lucide-react';
 import { TextField, InputAdornment, MenuItem } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 
@@ -88,6 +88,7 @@ const Button = ({ children, variant = 'primary', size = 'default', className = '
     secondary: 'bg-slate-100 text-slate-900 hover:bg-slate-200',
     outline: 'border border-slate-200 text-slate-800 hover:bg-slate-100',
     ghost: 'text-slate-800 hover:bg-slate-100',
+    danger: 'bg-red-50 text-red-700 hover:bg-red-100 border border-red-200',
   };
   const sizes = { default: 'h-9 px-4', sm: 'h-8 px-3 text-xs', lg: 'h-10 px-8' };
   return (
@@ -110,6 +111,7 @@ const DashboardPage = () => {
     viewFinancials: false,
     editInvoices: false,
     undoInvoice: false,
+    deleteInvoices: false,
   });
 
   const [editingInvoice, setEditingInvoice] = useState(null);
@@ -131,6 +133,7 @@ const DashboardPage = () => {
       viewFinancials: user.permissions?.viewFinancials ?? false,
       editInvoices: user.permissions?.editInvoices ?? false,
       undoInvoice: user.permissions?.undoInvoice ?? false,
+      deleteInvoices: user.permissions?.deleteInvoices ?? false,
     });
 
     (async () => {
@@ -255,6 +258,29 @@ const DashboardPage = () => {
       city: inv.city,
       item_row_count: inv.item_row_count,
     });
+  };
+
+  const handleDelete = async (invoiceId) => {
+    if (!window.confirm(t('confirmDeleteMessage'))) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API_URL}/api/invoices/${invoiceId}`, {
+        method: 'DELETE',
+      });
+
+      if (!res.ok) {
+        throw new Error((await res.text()) || 'Failed to delete invoice');
+      }
+
+      // Remove the invoice from the local state
+      setInvoices((prevInvoices) => prevInvoices.filter((inv) => inv.id !== invoiceId));
+      alert(t('invoiceDeletedSuccess'));
+    } catch (e) {
+      console.error('Error deleting invoice:', e);
+      alert(`Error: ${e.message}`);
+    }
   };
 
   const tableHeaderKeys = ['file', 'date', 'amount', 'reference', 'city', 'rowCount', 'actions'];
@@ -477,6 +503,11 @@ const DashboardPage = () => {
                           {t('undo')}
                         </Button>
                       )}
+                      {userPermissions.deleteInvoices && !isEditing && (
+                        <Button variant="danger" size="sm" onClick={() => handleDelete(inv.id)}>
+                          <Trash2 size={16} className="mr-1" /> {t('delete')}
+                        </Button>
+                      )}
                       {isEditing && (
                         <>
                           <Button
@@ -641,6 +672,7 @@ const DashboardPage = () => {
                               {t('edit')}
                             </Button>
                           )}
+
                           {userPermissions.editInvoices && missing && !isEditing && (
                             <Button
                               variant="secondary"
@@ -668,6 +700,12 @@ const DashboardPage = () => {
                               {t('confirm')}
                             </Button>
                           )}
+                          {userPermissions.deleteInvoices && !isEditing && (
+                            <Button variant="danger" size="sm" onClick={() => handleDelete(inv.id)}>
+                              <Trash2 size={16} />
+                            </Button>
+                          )}
+
                           {userPermissions.undoInvoice && inv.confirmed && !isEditing && (
                             <Button
                               variant="secondary"
