@@ -224,30 +224,59 @@ const DashboardPage = () => {
 
   const download = (fn) => fn && window.open(`${API_URL}/api/invoices/download/${fn}`, '_blank');
   const exportExcel = () => {
-    if (!filtered.length) return alert('No data to export.');
-    const rows = filtered.map((inv) => ({
-      Filename: inv.filename,
-      Date: inv.invoice_date,
-      Amount: inv.total_amount,
-      Reference: inv.order_reference,
-      City: inv.city,
-      RowCount: inv.item_row_count,
-    }));
+  if (!filtered.length) return alert('No data to export.');
 
-    const VAT_RATE = 1.18;
-    const totalBeforeVat = summary.rawNet / VAT_RATE;
-    rows.push({});
-    rows.push({
-      Filename: 'Total Before VAT (18%)',
-      Amount: totalBeforeVat,
-    });
+  const rows = filtered.map((inv) => ({
+    Filename: inv.filename,
+    Date: inv.invoice_date,
+    Amount: inv.total_amount,
+    Reference: inv.order_reference,
+    City: inv.city,
+    RowCount: inv.item_row_count,
+  }));
 
-    rows.push({ Filename: 'Net Total (incl. VAT)', Amount: summary.rawNet });
-    const ws = XLSX.utils.json_to_sheet(rows);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Report');
-    XLSX.writeFile(wb, 'Invoice_Report.xlsx');
-  };
+  const totalRowCount = filtered.reduce((sum, inv) => sum + inv.item_row_count, 0);
+
+  const VAT_RATE = 1.18;
+  const totalBeforeVat = summary.rawNet / VAT_RATE;
+  const tenPercentOfPreVat = totalBeforeVat * 0.10;
+
+  rows.push({});
+  rows.push({
+    Filename: 'Total Before VAT (18%)',
+    Amount: totalBeforeVat,
+  });
+  rows.push({
+    Filename: '10% of Pre-VAT Amount',
+    Amount: tenPercentOfPreVat,
+  });
+  rows.push({
+    Filename: 'Net Total (incl. VAT)',
+    Amount: summary.rawNet,
+  });
+  rows.push({});
+  rows.push({
+    Filename: 'Total Row Count',
+    RowCount: totalRowCount,
+  });
+
+  const ws = XLSX.utils.json_to_sheet(rows);
+
+  const amountColumnIndex = 'C';
+  for (let i = 2; i <= rows.length + 1; i++) {
+    const cellAddress = `${amountColumnIndex}${i}`;
+    const cell = ws[cellAddress];
+
+    if (cell && typeof cell.v === 'number') {
+      // *** הנה השינוי ***
+      cell.z = '0.00';
+    }
+  }
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Report');
+  XLSX.writeFile(wb, 'Invoice_Report.xlsx');
+};
 
   const startEdit = (inv) => {
     setEditingInvoice(inv.id);
