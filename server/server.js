@@ -10,9 +10,13 @@ const app = express();
 
 
 const corsOptions = {
-  origin: 'http://localhost:5173',
-  preview: 'http://localhost:4173' 
-}; 
+  origin: [
+    'http://172.20.0.49:5173',
+    'http://localhost:5173',    
+    'http://localhost:4173'   
+  ],
+  optionsSuccessStatus: 200 
+};  
 
 app.use(cors(corsOptions));
 app.use(express.json());
