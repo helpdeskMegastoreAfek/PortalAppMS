@@ -41,6 +41,9 @@ const resources = {
       undo: 'Undo',
       confirm: 'Confirm',
       edit: 'Edit',
+
+      //Main page
+      
     },
   },
   he: {

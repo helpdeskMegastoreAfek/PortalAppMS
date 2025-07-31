@@ -52,8 +52,7 @@ async function processAndCropImage(imagePath) {
         }
         
         console.log(`[Vision Service] Stage 2: Performing coarse crop based on text bounds...`);
-        
-        // חותכים חיתוך גס לפי גבולות הטקסט
+ 
         const coarseCroppedBuffer = await sharp(imagePath)
             .extract(region)
             .toBuffer();
@@ -62,13 +61,10 @@ async function processAndCropImage(imagePath) {
 
         const outputFilename = `processed-${path.basename(imagePath)}`;
         const outputPath = path.join(outputDir, outputFilename);
-        
-        // לוקחים את התמונה החתוכה הגסה ומסירים ממנה את השוליים השחורים
+
         await sharp(coarseCroppedBuffer)
             .trim({ 
-                // threshold קובע כמה דומה צבע צריך להיות לצבע הרקע כדי להיחתך.
-                // ערך גבוה יותר (למשל 50) יסיר גם גוונים של אפור כהה.
-                // נתחיל עם ערך נמוך-בינוני.
+
                 threshold: 30 
             })
             .toFile(outputPath);

@@ -268,7 +268,6 @@ const DashboardPage = () => {
     const cell = ws[cellAddress];
 
     if (cell && typeof cell.v === 'number') {
-      // *** הנה השינוי ***
       cell.z = '0.00';
     }
   }
@@ -329,7 +328,7 @@ const DashboardPage = () => {
     <>
       <Header user={user} />
       <Sidebar user={user} />
-      <div className="bg-slate-50 min-h-screen p-4  ml-15">
+      <div className="bg-slate-50 min-h-screen p-4 md:ml-15">
         <header className="mb-8 text-start">
           <h1 style={headerStyle} className="text-3xl font-bold text-start">
             {t('invoicesDashboard')}
@@ -371,9 +370,9 @@ const DashboardPage = () => {
         <Card>
           <div
             style={headerStyle}
-            className="p-4 border-b border-slate-200 flex flex-col md:flex-row items-stretch md:items-center gap-4"
+            className="p-4 border-b border-slate-200 flex flex-col md:flex-row md:items-center gap-4"
           >
-            <div className="flex-1 w-full md:max-w-sm">
+            <div className="flex-grow w-full md:max-w-sm">
               <TextField
                 size="small"
                 variant="outlined"
@@ -391,8 +390,8 @@ const DashboardPage = () => {
               />
             </div>
 
-            <div className="flex items-center justify-between flex-wrap gap-4">
-              <div className="flex gap-x-4">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+              <div className="flex flex-col sm:flex-row gap-4">
                 <TextField
                   label={t('startDate')}
                   type="date"

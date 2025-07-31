@@ -13,6 +13,7 @@ import {
   ChevronsRight,
   PackageOpen,
   File,
+  Camera
 } from 'lucide-react';
 
 const appLinks = [
@@ -31,6 +32,11 @@ const appLinks = [
   { label: 'IT Support Tickets', path: '/it', icon: <Laptop2 size={20} /> },
   { label: 'Service Tickets', path: '/service', icon: <Wrench size={20} /> },
   { label: 'Invoices', path: '/invoice', icon: <File size={20} /> },
+  {
+      label: 'Scanner',
+      path: '/invoiceUploader',
+      icon: <Camera size={20} />
+    },
 
   {
     label: 'Admin Panel',
