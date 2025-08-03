@@ -2,6 +2,9 @@ import React, { useState, useRef } from 'react';
 import DocumentScanner from '../apps/DocumentScanner';
 import Sidebar from './Sidebar';
 import Header from './Header';
+import CameraCapture from '../components/CameraCapture'; 
+
+// --- אייקונים ---
 
 const UploadIcon = () => (
   <svg
@@ -20,12 +23,21 @@ const UploadIcon = () => (
   </svg>
 );
 
+const CameraIcon = () => (
+  <svg className="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+  </svg>
+);
+
+
 function InvoiceUploader() {
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   const [selectedImage, setSelectedImage] = useState(null);
   const [croppedImage, setCroppedImage] = useState(null);
   const [uploadStatus, setUploadStatus] = useState('idle');
   const [statusMessage, setStatusMessage] = useState('');
+  const [isCameraOpen, setIsCameraOpen] = useState(false); // State חדש למצלמה
   const fileInputRef = useRef(null);
 
   const handleFileChange = (event) => {
@@ -48,6 +60,15 @@ function InvoiceUploader() {
   const handleProcessingComplete = (croppedDataUrl) => {
     setCroppedImage(croppedDataUrl);
     setSelectedImage(null);
+    setIsCameraOpen(false); // סגירת המצלמה לאחר חיתוך
+  };
+  
+  const handleCaptureComplete = (capturedDataUrl) => {
+    setSelectedImage(capturedDataUrl);
+    setIsCameraOpen(false);
+    setCroppedImage(null);
+    setUploadStatus('idle');
+    setStatusMessage('');
   };
 
   const handleUpload = async () => {
@@ -107,6 +128,21 @@ function InvoiceUploader() {
     }
   };
 
+  // --- תצוגת המצלמה ---
+  if (isCameraOpen) {
+    return (
+      <div className="bg-gray-900 min-h-screen w-full flex items-center justify-center p-4">
+        <div className="w-full max-w-2xl">
+          <CameraCapture
+            onCapture={handleCaptureComplete}
+            onCancel={() => setIsCameraOpen(false)}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // --- התצוגה הראשית ---
   return (
     <>
       <Header user={user} />
@@ -131,15 +167,31 @@ function InvoiceUploader() {
           />
 
           {!selectedImage && !croppedImage && (
-            <div
-              onClick={() => fileInputRef.current.click()}
-              className="relative block w-full border-2 border-dashed border-gray-300 rounded-xl p-10 sm:p-12 text-center hover:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 cursor-pointer transition-all duration-300 group"
-            >
-              <UploadIcon />
-              <span className="mt-4 block text-lg font-semibold text-gray-800 group-hover:text-indigo-600">
-                Click to upload or take a photo
-              </span>
-              <span className="mt-1 block text-sm text-gray-500">Supports: PNG, JPG</span>
+            <div className="space-y-4">
+              <div
+                onClick={() => fileInputRef.current.click()}
+                className="relative block w-full border-2 border-dashed border-gray-300 rounded-xl p-10 sm:p-12 text-center hover:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 cursor-pointer transition-all duration-300 group"
+              >
+                <UploadIcon />
+                <span className="mt-4 block text-lg font-semibold text-gray-800 group-hover:text-indigo-600">
+                  Click to upload a file
+                </span>
+                <span className="mt-1 block text-sm text-gray-500">Supports: PNG, JPG</span>
+              </div>
+              
+              <div className="flex items-center my-4">
+                  <div className="flex-grow border-t border-gray-300"></div>
+                  <span className="flex-shrink mx-4 text-gray-500 font-semibold">OR</span>
+                  <div className="flex-grow border-t border-gray-300"></div>
+              </div>
+
+              <button
+                onClick={() => setIsCameraOpen(true)}
+                className="w-full flex items-center justify-center bg-indigo-600 text-white font-semibold py-3 px-6 rounded-lg hover:bg-indigo-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+              >
+                <CameraIcon />
+                Scan with Camera
+              </button>
             </div>
           )}
 
@@ -147,7 +199,7 @@ function InvoiceUploader() {
             <div className="space-y-4">
               <h3 className="text-xl font-bold text-center text-gray-800">Crop the Document</h3>
               <p className="text-center text-sm text-gray-500 -mt-2">
-                The system will try to auto-detect the edges.
+                Drag the corners to adjust the selection.
               </p>
               <div className="bg-gray-200 p-2 rounded-lg">
                 <DocumentScanner

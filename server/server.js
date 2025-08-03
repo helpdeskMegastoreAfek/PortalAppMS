@@ -2,6 +2,8 @@ const express = require("express");
 const mongoose = require("mongoose");
 const dotenv = require("dotenv");
 const cors = require("cors");
+const https = require('https');
+const fs = require('fs');
 
 
 
@@ -11,8 +13,8 @@ const app = express();
 
 const corsOptions = {
   origin: [
-    'http://172.20.0.49:5173',
-    'http://localhost:5173',    
+    'https://172.20.0.49:5173',
+    'https://localhost:5173',    
     'http://localhost:4173'   
   ],
   optionsSuccessStatus: 200 
@@ -40,13 +42,18 @@ app.use("/api/invoices", invoiceRoutes);
 const uploadRoutes = require('./routes/uploadRoutes');
 app.use("/api/upload", uploadRoutes);
 
+const httpsOptions = {
+  key: fs.readFileSync('../my-app/localhost+1-key.pem'), 
+  cert: fs.readFileSync('../my-app/localhost+1.pem')
+}
 
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => {
     console.log("MongoDB connected");
-    app.listen(3000, "0.0.0.0", () =>
-      console.log("Server running on port 3000")
-    );
+    https.createServer(httpsOptions, app).listen(3000, "0.0.0.0", () => {
+      console.log("✅ Server is running securely on HTTPS port 3000");
+    });
+    
   })
   .catch((err) => console.error(err));

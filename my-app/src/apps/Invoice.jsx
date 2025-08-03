@@ -65,7 +65,7 @@ const transformMongoInvoice = (mongoDoc) => ({
   processed_at: mongoDoc.processed_at
     ? new Date(mongoDoc.processed_at).toISOString().substring(0, 10)
     : null,
-  confirmed: mongoDoc.confirmed || false, // שדה חדש
+  confirmed: mongoDoc.confirmed || false, 
 });
 
 const Card = ({ children, className = '' }) => (
@@ -112,6 +112,7 @@ const DashboardPage = () => {
     editInvoices: false,
     undoInvoice: false,
     deleteInvoices: false,
+    cvsExport: false,
   });
 
   const [editingInvoice, setEditingInvoice] = useState(null);
@@ -134,6 +135,7 @@ const DashboardPage = () => {
       editInvoices: user.permissions?.editInvoices ?? false,
       undoInvoice: user.permissions?.undoInvoice ?? false,
       deleteInvoices: user.permissions?.deleteInvoices ?? false,
+      cvsExport: user.permissions?.csvExport ?? false,
     });
 
     (async () => {
@@ -411,7 +413,10 @@ const DashboardPage = () => {
               </div>
 
               <div className="flex items-center gap-2">
-                <Button className="text-xs" variant="secondary" onClick={exportExcel}>
+                <Button 
+                className="text-xs" 
+                variant="secondary" 
+                onClick={exportExcel}>
                   <FileDown />
                 </Button>
                 <Button

@@ -1,2 +1,4 @@
-node_modules
 .env
+node_modules
+localhost+1-key.pem
+localhost+1.pem
