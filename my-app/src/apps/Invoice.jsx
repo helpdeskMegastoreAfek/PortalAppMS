@@ -125,6 +125,10 @@ const DashboardPage = () => {
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
 
+  const [cityAnchorEl, setCityAnchorEl] = useState(null);
+  const [selectedCity, setSelectedCity] = useState('');
+  const openCityMenu = Boolean(cityAnchorEl);
+
   const [editingInvoice, setEditingInvoice] = useState(null);
   const [editValues, setEditValues] = useState({});
   const [confirmed] = useState(new Set());
@@ -149,6 +153,19 @@ const DashboardPage = () => {
     setAmountRangeFilter(value);
     handleClose();
   };
+
+  const handleCityClick = (event) => setCityAnchorEl(event.currentTarget);
+  const handleCityClose = () => setCityAnchorEl(null);
+  const handleCityMenuItemClick = (city) => {
+    setSelectedCity(city);
+    handleCityClose();
+  };
+
+  const cityOptions = useMemo(() => {
+    if (!invoices) return [];
+    const cities = invoices.map((invoice) => invoice.city).filter(Boolean);
+    return [...new Set(cities)].sort().map((city) => ({ value: city, label: city }));
+  }, [invoices]);
 
   useEffect(() => {
     setUserPermissions({
@@ -195,6 +212,7 @@ const DashboardPage = () => {
         const matchSearch = !searchTerm || Object.values(inv).join(' ').toLowerCase().includes(lf);
         const matchStart = !startDate || inv.invoice_date >= startDate;
         const matchEnd = !endDate || inv.invoice_date <= endDate;
+        const cityMatch = !selectedCity || inv.city === selectedCity;
 
         let amountMatch = true;
         if (amountRangeFilter) {
@@ -210,11 +228,10 @@ const DashboardPage = () => {
             amountMatch = amount >= min && amount <= max;
           }
         }
-        // --- סוף הלוגיקה החדשה ---
 
-        return matchSearch && matchStart && matchEnd && amountMatch;
+        return matchSearch && matchStart && matchEnd && amountMatch && cityMatch;
       }),
-    [invoices, searchTerm, startDate, endDate, amountRangeFilter]
+    [invoices, searchTerm, startDate, endDate, amountRangeFilter, selectedCity]
   );
 
   const summary = useMemo(() => {
@@ -627,6 +644,7 @@ const DashboardPage = () => {
               <thead className="bg-slate-100 text-center">
                 <tr>
                   {tableHeaderKeys.map((headerKey) => {
+                    // --- בלוק סינון לפי סכום ---
                     if (headerKey === 'amount') {
                       const options = [
                         { value: '0-100', label: '0 - 100' },
@@ -638,7 +656,7 @@ const DashboardPage = () => {
                       ];
                       let displayText;
                       if (amountRangeFilter === '') {
-                        displayText = `${t('amount')} (All)`;
+                        displayText = `${t('amount')}`;
                       } else {
                         const selectedOption = options.find(
                           (opt) => opt.value === amountRangeFilter
@@ -660,30 +678,69 @@ const DashboardPage = () => {
                             </span>
                             <EllipsisVertical size={18} className="ml-1" />
                           </button>
-                          <Menu anchorEl={anchorEl} open={open} onClose={handleClose}>
+                          <Menu
+                            anchorEl={anchorEl}
+                            open={open}
+                            onClose={handleClose}
+                            anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+                            transformOrigin={{ vertical: 'top', horizontal: 'center' }}
+                          >
                             <MenuItem onClick={() => handleMenuItemClick('')}>
                               <em>All</em>
                             </MenuItem>
-                            <MenuItem onClick={() => handleMenuItemClick('0-100')}>
-                              0 - 100
-                            </MenuItem>
-                            <MenuItem onClick={() => handleMenuItemClick('101-200')}>
-                              101 - 200
-                            </MenuItem>
-                            <MenuItem onClick={() => handleMenuItemClick('201-500')}>
-                              201 - 500
-                            </MenuItem>
-                            <MenuItem onClick={() => handleMenuItemClick('501-1000')}>
-                              501 - 1000
-                            </MenuItem>
-                            <MenuItem onClick={() => handleMenuItemClick('1001+')}>1001+</MenuItem>
-                            <MenuItem onClick={() => handleMenuItemClick('negative')}>
-                              Negative Amounts
-                            </MenuItem>
+                            {options.map((option) => (
+                              <MenuItem
+                                key={option.value}
+                                onClick={() => handleMenuItemClick(option.value)}
+                              >
+                                {option.label}
+                              </MenuItem>
+                            ))}
                           </Menu>
                         </th>
                       );
                     }
+
+                    // --- בלוק חדש ונפרד עבור סינון העיר ---
+                    if (headerKey === 'city') {
+                      return (
+                        <th
+                          key={headerKey}
+                          className="px-6 py-3 font-medium uppercase text-slate-600"
+                        >
+                          <button
+                            onClick={handleCityClick}
+                            className="flex items-center justify-center w-full bg-transparent border-none p-0 cursor-pointer"
+                          >
+                            <span className="font-medium uppercase text-slate-600">
+                              {selectedCity || t('city')}
+                            </span>
+                            <EllipsisVertical size={18} className="ml-1" />
+                          </button>
+                          <Menu
+                            anchorEl={cityAnchorEl}
+                            open={openCityMenu}
+                            onClose={handleCityClose}
+                            anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+                            transformOrigin={{ vertical: 'top', horizontal: 'center' }}
+                          >
+                            <MenuItem onClick={() => handleCityMenuItemClick('')}>
+                              <em>All Cities</em>
+                            </MenuItem>
+                            {cityOptions.map((option) => (
+                              <MenuItem
+                                key={option.value}
+                                onClick={() => handleCityMenuItemClick(option.value)}
+                              >
+                                {option.label}
+                              </MenuItem>
+                            ))}
+                          </Menu>
+                        </th>
+                      );
+                    }
+
+                    // --- ברירת מחדל: כותרת רגילה לכל השאר ---
                     return (
                       <th
                         key={headerKey}
