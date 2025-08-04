@@ -161,7 +161,6 @@ const DashboardPage = () => {
     handleCityClose();
   };
 
-
 const cityOptions = useMemo(() => {
     if (!invoices) return [];
     const uniqueCities = [...new Set(invoices.map(invoice => invoice.city).filter(Boolean))];
