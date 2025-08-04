@@ -176,7 +176,6 @@ const cityOptions = useMemo(() => {
         value: city,
         label: city
     }));
-
 }, [invoices]);
 
   useEffect(() => {
