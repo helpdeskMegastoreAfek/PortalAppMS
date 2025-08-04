@@ -8,7 +8,6 @@ import {
   Search,
   Trash2,
   EllipsisVertical,
-  ChevronDown,
 } from 'lucide-react';
 import { TextField, InputAdornment, MenuItem, Menu } from '@mui/material';
 import { useTranslation } from 'react-i18next';
@@ -119,7 +118,7 @@ const DashboardPage = () => {
     editInvoices: false,
     undoInvoice: false,
     deleteInvoices: false,
-    cvsExport: false,
+    csvExport: false,
   });
   const [amountRangeFilter, setAmountRangeFilter] = useState('');
   const [anchorEl, setAnchorEl] = useState(null);
@@ -161,21 +160,21 @@ const DashboardPage = () => {
     handleCityClose();
   };
 
-const cityOptions = useMemo(() => {
+  const cityOptions = useMemo(() => {
     if (!invoices) return [];
-    const uniqueCities = [...new Set(invoices.map(invoice => invoice.city).filter(Boolean))];
-    const regularCities = uniqueCities.filter(city => city !== 'UNKNOWN');
+    const uniqueCities = [...new Set(invoices.map((invoice) => invoice.city).filter(Boolean))];
+    const regularCities = uniqueCities.filter((city) => city !== 'UNKNOWN');
     const hasUnknown = uniqueCities.includes('UNKNOWN');
     regularCities.sort();
     let finalSortedCities = regularCities;
     if (hasUnknown) {
-        finalSortedCities.push('UNKNOWN');
+      finalSortedCities.push('UNKNOWN');
     }
-    return finalSortedCities.map(city => ({
-        value: city,
-        label: city
+    return finalSortedCities.map((city) => ({
+      value: city,
+      label: city,
     }));
-}, [invoices]);
+  }, [invoices]);
 
   useEffect(() => {
     setUserPermissions({
@@ -183,7 +182,7 @@ const cityOptions = useMemo(() => {
       editInvoices: user.permissions?.editInvoices ?? false,
       undoInvoice: user.permissions?.undoInvoice ?? false,
       deleteInvoices: user.permissions?.deleteInvoices ?? false,
-      cvsExport: user.permissions?.csvExport ?? false,
+      csvExport: user.permissions?.csvExport ?? false,
     });
 
     (async () => {
@@ -390,6 +389,7 @@ const cityOptions = useMemo(() => {
     return (
       <div className="flex items-center justify-center h-screen text-red-700 p-4">{error}</div>
     );
+  
 
   return (
     <>
@@ -475,12 +475,6 @@ const cityOptions = useMemo(() => {
                   InputLabelProps={{ shrink: true }}
                   size="small"
                 />
-              </div>
-
-              <div className="flex items-center gap-2">
-                <Button className="text-xs" variant="secondary" onClick={exportExcel}>
-                  <FileDown />
-                </Button>
                 <Button
                   variant="ghost"
                   onClick={() => {
@@ -491,6 +485,13 @@ const cityOptions = useMemo(() => {
                 >
                   {t('clear')}
                 </Button>
+              </div>
+              <div className="flex items-center gap-2">
+                {userPermissions.csvExport && (
+                  <Button className="text-xs" variant="secondary" onClick={exportExcel}>
+                    <FileDown />
+                  </Button>
+                )}
               </div>
             </div>
           </div>

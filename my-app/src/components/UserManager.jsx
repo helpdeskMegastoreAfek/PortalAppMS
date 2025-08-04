@@ -37,9 +37,9 @@ export default function UsersTable({ refreshTrigger, appOptions }) {
     editInvoices: false,
     undoInvoice: false,
     deleteInvoices: false,
+    csvExport: false,
   };
 
-  // handler לשינוי של checkboxes
   const handlePermissionChange = (e) => {
     const { name, checked } = e.target;
     setEditedData((prev) => ({
@@ -500,6 +500,12 @@ export default function UsersTable({ refreshTrigger, appOptions }) {
                       checked={permissions.undoInvoice}
                       onChange={handlePermissionChange}
                       label="Undo"
+                    ></PermissionSwitch>
+                    <PermissionSwitch
+                      name="csvExport"
+                      checked={permissions.csvExport}
+                      onChange={handlePermissionChange}
+                      label="Export CSV"
                     ></PermissionSwitch>
                     <PermissionSwitch
                       name="deleteInvoices"

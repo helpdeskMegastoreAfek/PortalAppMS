@@ -30,6 +30,7 @@ const userSchema = new mongoose.Schema({
     editInvoices: { type: Boolean, default: false },
     undoInvoice: {type: Boolean, default: false},
     deleteInvoices: {type: Boolean, default: false},
+    csvExport: {type: Boolean, default: false},
   },
   needsPasswordChange: {
     type: Boolean,
