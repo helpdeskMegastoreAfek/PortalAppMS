@@ -43,7 +43,6 @@ const resources = {
       edit: 'Edit',
 
       //Main page
-      
     },
   },
   he: {

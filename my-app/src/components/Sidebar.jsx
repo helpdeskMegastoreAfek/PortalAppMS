@@ -13,7 +13,7 @@ import {
   ChevronsRight,
   PackageOpen,
   File,
-  Camera
+  Camera,
 } from 'lucide-react';
 
 const appLinks = [
@@ -33,10 +33,10 @@ const appLinks = [
   { label: 'Service Tickets', path: '/service', icon: <Wrench size={20} /> },
   { label: 'Invoices', path: '/invoice', icon: <File size={20} /> },
   {
-      label: 'Scanner',
-      path: '/invoiceUploader',
-      icon: <Camera size={20} />
-    },
+    label: 'Scanner',
+    path: '/invoiceUploader',
+    icon: <Camera size={20} />,
+  },
 
   {
     label: 'Admin Panel',
@@ -81,11 +81,13 @@ export default function Sidebar({ user }) {
   const regularLinks = appLinks.filter((app) => !app.adminOnly);
 
   const filteredRegularLinks = regularLinks.filter(
-    (app) => user?.role === 'admin' && user?.role === 'developer' || user?.allowedApps?.includes(app.path)
+    (app) =>
+      (user?.role === 'admin' && user?.role === 'developer') ||
+      user?.allowedApps?.includes(app.path)
   );
 
-  const shouldShowAdminLink = user?.role === 'admin' && adminLink ||
-   user?.role === 'developer' && adminLink;
+  const shouldShowAdminLink =
+    (user?.role === 'admin' && adminLink) || (user?.role === 'developer' && adminLink);
 
   return (
     <>

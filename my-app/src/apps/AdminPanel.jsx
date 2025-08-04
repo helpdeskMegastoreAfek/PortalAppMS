@@ -265,11 +265,11 @@ export default function AdminPanel() {
                         label="Undo"
                       ></PermissionSwitch>
                       <PermissionSwitch
-                      name="deleteInvoices"
-                      checked={permissions.deleteInvoices}
-                      onChange={handlePermissionChange}
-                      label="Delete invoices (Only Developers)"
-                    ></PermissionSwitch>
+                        name="deleteInvoices"
+                        checked={permissions.deleteInvoices}
+                        onChange={handlePermissionChange}
+                        label="Delete invoices (Only Developers)"
+                      ></PermissionSwitch>
                     </FormGroup>
                   </div>
                 </div>

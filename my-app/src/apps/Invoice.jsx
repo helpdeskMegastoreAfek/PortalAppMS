@@ -2,8 +2,15 @@ import React, { useState, useEffect, useMemo } from 'react';
 import * as XLSX from 'xlsx';
 import Header from '../components/Header';
 import Sidebar from '../components/Sidebar';
-import { FileDown, CloudDownload, Search, Trash2 } from 'lucide-react';
-import { TextField, InputAdornment, MenuItem } from '@mui/material';
+import {
+  FileDown,
+  CloudDownload,
+  Search,
+  Trash2,
+  EllipsisVertical,
+  ChevronDown,
+} from 'lucide-react';
+import { TextField, InputAdornment, MenuItem, Menu } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 
 const API_URL = import.meta.env.VITE_API_URL;
@@ -65,7 +72,7 @@ const transformMongoInvoice = (mongoDoc) => ({
   processed_at: mongoDoc.processed_at
     ? new Date(mongoDoc.processed_at).toISOString().substring(0, 10)
     : null,
-  confirmed: mongoDoc.confirmed || false, 
+  confirmed: mongoDoc.confirmed || false,
 });
 
 const Card = ({ children, className = '' }) => (
@@ -114,6 +121,9 @@ const DashboardPage = () => {
     deleteInvoices: false,
     cvsExport: false,
   });
+  const [amountRangeFilter, setAmountRangeFilter] = useState('');
+  const [anchorEl, setAnchorEl] = useState(null);
+  const open = Boolean(anchorEl);
 
   const [editingInvoice, setEditingInvoice] = useState(null);
   const [editValues, setEditValues] = useState({});
@@ -127,6 +137,17 @@ const DashboardPage = () => {
   const { t, i18n } = useTranslation();
   const headerStyle = {
     textAlign: i18n.language === 'he' ? 'right' : 'left',
+  };
+
+  const handleClick = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+  const handleClose = () => {
+    setAnchorEl(null);
+  };
+  const handleMenuItemClick = (value) => {
+    setAmountRangeFilter(value);
+    handleClose();
   };
 
   useEffect(() => {
@@ -174,9 +195,26 @@ const DashboardPage = () => {
         const matchSearch = !searchTerm || Object.values(inv).join(' ').toLowerCase().includes(lf);
         const matchStart = !startDate || inv.invoice_date >= startDate;
         const matchEnd = !endDate || inv.invoice_date <= endDate;
-        return matchSearch && matchStart && matchEnd;
+
+        let amountMatch = true;
+        if (amountRangeFilter) {
+          const amount = inv.total_amount;
+
+          if (amountRangeFilter === 'negative') {
+            amountMatch = amount < 0;
+          } else if (amountRangeFilter.includes('+')) {
+            const lowerBound = parseInt(amountRangeFilter, 10);
+            amountMatch = amount >= lowerBound;
+          } else {
+            const [min, max] = amountRangeFilter.split('-').map(Number);
+            amountMatch = amount >= min && amount <= max;
+          }
+        }
+        // --- סוף הלוגיקה החדשה ---
+
+        return matchSearch && matchStart && matchEnd && amountMatch;
       }),
-    [invoices, searchTerm, startDate, endDate]
+    [invoices, searchTerm, startDate, endDate, amountRangeFilter]
   );
 
   const summary = useMemo(() => {
@@ -226,58 +264,58 @@ const DashboardPage = () => {
 
   const download = (fn) => fn && window.open(`${API_URL}/api/invoices/download/${fn}`, '_blank');
   const exportExcel = () => {
-  if (!filtered.length) return alert('No data to export.');
+    if (!filtered.length) return alert('No data to export.');
 
-  const rows = filtered.map((inv) => ({
-    Filename: inv.filename,
-    Date: inv.invoice_date,
-    Amount: inv.total_amount,
-    Reference: inv.order_reference,
-    City: inv.city,
-    RowCount: inv.item_row_count,
-  }));
+    const rows = filtered.map((inv) => ({
+      Filename: inv.filename,
+      Date: inv.invoice_date,
+      Amount: inv.total_amount,
+      Reference: inv.order_reference,
+      City: inv.city,
+      RowCount: inv.item_row_count,
+    }));
 
-  const totalRowCount = filtered.reduce((sum, inv) => sum + inv.item_row_count, 0);
+    const totalRowCount = filtered.reduce((sum, inv) => sum + inv.item_row_count, 0);
 
-  const VAT_RATE = 1.18;
-  const totalBeforeVat = summary.rawNet / VAT_RATE;
-  const tenPercentOfPreVat = totalBeforeVat * 0.10;
+    const VAT_RATE = 1.18;
+    const totalBeforeVat = summary.rawNet / VAT_RATE;
+    const tenPercentOfPreVat = totalBeforeVat * 0.1;
 
-  rows.push({});
-  rows.push({
-    Filename: 'Total Before VAT (18%)',
-    Amount: totalBeforeVat,
-  });
-  rows.push({
-    Filename: '10% of Pre-VAT Amount',
-    Amount: tenPercentOfPreVat,
-  });
-  rows.push({
-    Filename: 'Net Total (incl. VAT)',
-    Amount: summary.rawNet,
-  });
-  rows.push({});
-  rows.push({
-    Filename: 'Total Row Count',
-    RowCount: totalRowCount,
-  });
+    rows.push({});
+    rows.push({
+      Filename: 'Total Before VAT (18%)',
+      Amount: totalBeforeVat,
+    });
+    rows.push({
+      Filename: '10% of Pre-VAT Amount',
+      Amount: tenPercentOfPreVat,
+    });
+    rows.push({
+      Filename: 'Net Total (incl. VAT)',
+      Amount: summary.rawNet,
+    });
+    rows.push({});
+    rows.push({
+      Filename: 'Total Row Count',
+      RowCount: totalRowCount,
+    });
 
-  const ws = XLSX.utils.json_to_sheet(rows);
+    const ws = XLSX.utils.json_to_sheet(rows);
 
-  const amountColumnIndex = 'C';
-  for (let i = 2; i <= rows.length + 1; i++) {
-    const cellAddress = `${amountColumnIndex}${i}`;
-    const cell = ws[cellAddress];
+    const amountColumnIndex = 'C';
+    for (let i = 2; i <= rows.length + 1; i++) {
+      const cellAddress = `${amountColumnIndex}${i}`;
+      const cell = ws[cellAddress];
 
-    if (cell && typeof cell.v === 'number') {
-      cell.z = '0.00';
+      if (cell && typeof cell.v === 'number') {
+        cell.z = '0.00';
+      }
     }
-  }
 
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Report');
-  XLSX.writeFile(wb, 'Invoice_Report.xlsx');
-};
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Report');
+    XLSX.writeFile(wb, 'Invoice_Report.xlsx');
+  };
 
   const startEdit = (inv) => {
     setEditingInvoice(inv.id);
@@ -413,10 +451,7 @@ const DashboardPage = () => {
               </div>
 
               <div className="flex items-center gap-2">
-                <Button 
-                className="text-xs" 
-                variant="secondary" 
-                onClick={exportExcel}>
+                <Button className="text-xs" variant="secondary" onClick={exportExcel}>
                   <FileDown />
                 </Button>
                 <Button
@@ -591,11 +626,73 @@ const DashboardPage = () => {
             <table className="min-w-full divide-y divide-slate-200 text-sm text-left">
               <thead className="bg-slate-100 text-center">
                 <tr>
-                  {tableHeaderKeys.map((headerKey) => (
-                    <th key={headerKey} className="px-6 py-3 font-medium uppercase text-slate-600">
-                      {t(headerKey)}
-                    </th>
-                  ))}
+                  {tableHeaderKeys.map((headerKey) => {
+                    if (headerKey === 'amount') {
+                      const options = [
+                        { value: '0-100', label: '0 - 100' },
+                        { value: '101-200', label: '101 - 200' },
+                        { value: '201-500', label: '201 - 500' },
+                        { value: '501-1000', label: '501 - 1000' },
+                        { value: '1001+', label: '1001+' },
+                        { value: 'negative', label: 'Negative Amounts' },
+                      ];
+                      let displayText;
+                      if (amountRangeFilter === '') {
+                        displayText = `${t('amount')} (All)`;
+                      } else {
+                        const selectedOption = options.find(
+                          (opt) => opt.value === amountRangeFilter
+                        );
+                        displayText = selectedOption ? selectedOption.label : '';
+                      }
+
+                      return (
+                        <th
+                          key={headerKey}
+                          className="px-6 py-3 font-medium uppercase text-slate-600"
+                        >
+                          <button
+                            onClick={handleClick}
+                            className="flex items-center justify-center w-full bg-transparent border-none p-0 cursor-pointer"
+                          >
+                            <span className="font-medium uppercase text-slate-600">
+                              {displayText}
+                            </span>
+                            <EllipsisVertical size={18} className="ml-1" />
+                          </button>
+                          <Menu anchorEl={anchorEl} open={open} onClose={handleClose}>
+                            <MenuItem onClick={() => handleMenuItemClick('')}>
+                              <em>All</em>
+                            </MenuItem>
+                            <MenuItem onClick={() => handleMenuItemClick('0-100')}>
+                              0 - 100
+                            </MenuItem>
+                            <MenuItem onClick={() => handleMenuItemClick('101-200')}>
+                              101 - 200
+                            </MenuItem>
+                            <MenuItem onClick={() => handleMenuItemClick('201-500')}>
+                              201 - 500
+                            </MenuItem>
+                            <MenuItem onClick={() => handleMenuItemClick('501-1000')}>
+                              501 - 1000
+                            </MenuItem>
+                            <MenuItem onClick={() => handleMenuItemClick('1001+')}>1001+</MenuItem>
+                            <MenuItem onClick={() => handleMenuItemClick('negative')}>
+                              Negative Amounts
+                            </MenuItem>
+                          </Menu>
+                        </th>
+                      );
+                    }
+                    return (
+                      <th
+                        key={headerKey}
+                        className="px-6 py-3 font-medium uppercase text-slate-600"
+                      >
+                        {t(headerKey)}
+                      </th>
+                    );
+                  })}
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-center">

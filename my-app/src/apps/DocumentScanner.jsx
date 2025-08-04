@@ -12,14 +12,13 @@ const LoadingSpinner = ({ text = 'Analyzing Document...' }) => (
 function DocumentScanner({ imageSrc, onProcessComplete }) {
   const canvasRef = useRef(null);
   const imageRef = useRef(new Image());
-  const [model, setModel] = useState(null); 
-  const [cv, setCv] = useState(null); 
+  const [model, setModel] = useState(null);
+  const [cv, setCv] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [loadingText, setLoadingText] = useState('Loading AI & CV Libraries...');
   const [corners, setCorners] = useState([]);
   const [draggingPointIndex, setDraggingPointIndex] = useState(null);
   const [error, setError] = useState('');
-
 
   useEffect(() => {
     let modelLoaded = false;

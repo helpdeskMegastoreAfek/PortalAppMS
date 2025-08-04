@@ -13,7 +13,7 @@ import Service from './apps/ServiceTickets'; // This component uses DatePicker
 import Login from './pages/Login';
 import AdminPanel from './apps/AdminPanel';
 import AdminBoxInventory from './apps/AdminBoxInventory';
-import Invoice from './apps/invoice';
+import Invoice from './apps/Invoice';
 // import AdminMealOrdering from "./apps/AdminMealOrdering";
 import InvoiceUploader from './components/InvoiceUploader';
 
