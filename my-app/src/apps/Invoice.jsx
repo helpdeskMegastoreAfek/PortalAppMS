@@ -161,11 +161,23 @@ const DashboardPage = () => {
     handleCityClose();
   };
 
-  const cityOptions = useMemo(() => {
+
+const cityOptions = useMemo(() => {
     if (!invoices) return [];
-    const cities = invoices.map((invoice) => invoice.city).filter(Boolean);
-    return [...new Set(cities)].sort().map((city) => ({ value: city, label: city }));
-  }, [invoices]);
+    const uniqueCities = [...new Set(invoices.map(invoice => invoice.city).filter(Boolean))];
+    const regularCities = uniqueCities.filter(city => city !== 'UNKNOWN');
+    const hasUnknown = uniqueCities.includes('UNKNOWN');
+    regularCities.sort();
+    let finalSortedCities = regularCities;
+    if (hasUnknown) {
+        finalSortedCities.push('UNKNOWN');
+    }
+    return finalSortedCities.map(city => ({
+        value: city,
+        label: city
+    }));
+
+}, [invoices]);
 
   useEffect(() => {
     setUserPermissions({
