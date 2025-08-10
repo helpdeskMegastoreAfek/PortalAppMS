@@ -41,6 +41,9 @@ const resources = {
       undo: 'Undo',
       confirm: 'Confirm',
       edit: 'Edit',
+      all: 'ALL',
+      negativeAmount: 'Negative Amounts',
+      allCities: 'All Cities'
 
       //Main page
     },
@@ -83,6 +86,9 @@ const resources = {
       undo: 'לבטל',
       confirm: 'לאשר',
       edit: 'לערוך',
+      all: 'הכל',
+      negativeAmount: 'סכומים שליליים',
+      allCities: 'כל הערים'
     },
   },
 };

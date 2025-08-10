@@ -179,7 +179,7 @@ export default function MealOrderingForm() {
       return;
     }
     try {
-      const response = await fetch('http://localhost:3000/api/meals', {
+      const response = await fetch('https://172.20.0.49:3000/api/meals', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId, weekId: nextWeekId, username: user.username, meals }),
