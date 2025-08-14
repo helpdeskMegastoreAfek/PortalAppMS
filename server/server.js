@@ -42,6 +42,12 @@ app.use("/api/invoices", invoiceRoutes);
 const uploadRoutes = require('./routes/uploadRoutes');
 app.use("/api/upload", uploadRoutes);
 
+const citiesRoutes = require('./routes/cities');
+app.use("/api/cities", citiesRoutes);
+
+const logsRoutes = require('./routes/logs')
+app.use("/api/logs", logsRoutes)
+
 const httpsOptions = {
   key: fs.readFileSync('../my-app/localhost+1-key.pem'), 
   cert: fs.readFileSync('../my-app/localhost+1.pem')

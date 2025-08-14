@@ -2,13 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import * as XLSX from 'xlsx';
 import Header from '../components/Header';
 import Sidebar from '../components/Sidebar';
-import {
-  FileDown,
-  CloudDownload,
-  Search,
-  Trash2,
-  EllipsisVertical,
-} from 'lucide-react';
+import { FileDown, CloudDownload, Search, Trash2, EllipsisVertical } from 'lucide-react';
 import { TextField, InputAdornment, MenuItem, Menu } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 
@@ -64,6 +58,7 @@ const transformMongoInvoice = (mongoDoc) => ({
     ? new Date(mongoDoc.invoice_date).toISOString().substring(0, 10)
     : null,
   total_amount: mongoDoc.total_amount ?? null,
+  delivery_fee: mongoDoc.delivery_fee ?? null,
   order_reference: mongoDoc.order_reference || '',
   city: mongoDoc.city || '',
   item_row_count: mongoDoc.item_row_count || 0,
@@ -209,6 +204,8 @@ const DashboardPage = () => {
     !inv.invoice_date ||
     inv.total_amount == null ||
     inv.total_amount == 0 ||
+    inv.delivery_fee == null ||
+    inv.delivery_fee == 0 ||
     !inv.order_reference ||
     !inv.city ||
     inv.item_row_count <= 0 ||
@@ -289,102 +286,206 @@ const DashboardPage = () => {
   const anyMissing = useMemo(() => sortedInvoices.some(isStillMissing), [sortedInvoices]);
 
   const download = (fn) => fn && window.open(`${API_URL}/api/invoices/download/${fn}`, '_blank');
-    const exportExcel = () => {
+  const exportExcel = () => {
     if (!sortedInvoices.length) return alert('No data to export.');
     const groupedByCity = sortedInvoices.reduce((acc, inv) => {
-        const city = inv.city || 'UNKNOWN';
-        if (!acc[city]) { acc[city] = []; }
-        acc[city].push(inv);
-        return acc;
+      const city = inv.city || 'UNKNOWN';
+      if (!acc[city]) {
+        acc[city] = [];
+      }
+      acc[city].push(inv);
+      return acc;
     }, {});
 
-    const cityOrder = [...new Set(sortedInvoices.map(inv => inv.city || 'UNKNOWN'))];
+    const cityOrder = [...new Set(sortedInvoices.map((inv) => inv.city || 'UNKNOWN'))];
 
     const dataSheetRows = [];
     cityOrder.forEach((city, index) => {
-        const invoicesInCity = groupedByCity[city];
-        if (!invoicesInCity) return;
-        
-        invoicesInCity.forEach(inv => {
-            dataSheetRows.push({
-                'File': inv.filename,
-                'Date': inv.invoice_date,
-                'Amount': inv.total_amount,
-                'Reference': inv.order_reference,
-                'City': inv.city,
-                'Row Count': inv.item_row_count,
-            });
+      const invoicesInCity = groupedByCity[city];
+      if (!invoicesInCity) return;
+
+      invoicesInCity.forEach((inv) => {
+        dataSheetRows.push({
+          File: inv.filename,
+          Date: inv.invoice_date,
+          Amount: inv.total_amount,
+          Reference: inv.order_reference,
+          City: inv.city,
+          'Row Count': inv.item_row_count,
         });
+      });
 
-
-        if (index < cityOrder.length - 1) {
-            dataSheetRows.push({}); 
-        }
+      if (index < cityOrder.length - 1) {
+        dataSheetRows.push({});
+      }
     });
 
     const dataWs = XLSX.utils.json_to_sheet(dataSheetRows, {
-      header: ['File', 'Date', 'Amount', 'Reference', 'City', 'Row Count']
+      header: ['File', 'Date', 'Amount', 'Reference', 'City', 'Row Count'],
     });
 
     const amountColumnIndex = 'C';
     for (let i = 2; i <= dataSheetRows.length + 1; i++) {
-
-        if (dataSheetRows[i-2] && Object.keys(dataSheetRows[i-2]).length === 0) continue;
-        const cellAddress = `${amountColumnIndex}${i}`;
-        if (dataWs[cellAddress] && typeof dataWs[cellAddress].v === 'number') {
-            dataWs[cellAddress].z = '#,##0.00';
-        }
+      if (dataSheetRows[i - 2] && Object.keys(dataSheetRows[i - 2]).length === 0) continue;
+      const cellAddress = `${amountColumnIndex}${i}`;
+      if (dataWs[cellAddress] && typeof dataWs[cellAddress].v === 'number') {
+        dataWs[cellAddress].z = '#,##0.00';
+      }
     }
 
     const totalRowCount = sortedInvoices.reduce((sum, inv) => sum + inv.item_row_count, 0);
-    const VAT_RATE = 1.18; 
+    const VAT_RATE = 1.18;
     const totalBeforeVat = summary.rawNet / VAT_RATE;
     const tenPercentOfPreVat = totalBeforeVat * 0.1;
     const summaryData = [
-        { Category: "--- General Summary ---" },
-        { Category: "Total Income/Orders", Value: summary.inc, Count: `${summary.cntInv} Invoices` },
-        { Category: "Total Credits", Value: summary.cred, Count: `${summary.cntCred} Credit Notes` },
-        { Category: "Net Total (incl. VAT)", Value: summary.net },
-        { Category: "Total Before VAT (18%)", Value: totalBeforeVat },
-        { Category: "10% of Pre-VAT Amount", Value: tenPercentOfPreVat },
-        { Category: "Total Row Count", Value: totalRowCount },
-        {}, 
-        { Category: "--- Invoices Per City ---" },
-        { Category: "Total Orders", Count: sortedInvoices.length },
+      { Category: '--- General Summary ---' },
+      { Category: 'Total Income/Orders', Value: summary.inc, Count: `${summary.cntInv} Invoices` },
+      { Category: 'Total Credits', Value: summary.cred, Count: `${summary.cntCred} Credit Notes` },
+      { Category: 'Net Total (incl. VAT)', Value: summary.net },
+      { Category: 'Total Before VAT (18%)', Value: totalBeforeVat },
+      { Category: '10% of Pre-VAT Amount', Value: tenPercentOfPreVat },
+      { Category: 'Total Row Count', Value: totalRowCount },
+      {},
+      { Category: '--- Invoices Per City ---' },
+      { Category: 'Total Orders', Count: sortedInvoices.length },
     ];
 
-    cityOrder.forEach(city => {
-        summaryData.push({
-            Category: city,
-            Value: groupedByCity[city].length,
-        });
+    cityOrder.forEach((city) => {
+      summaryData.push({
+        Category: city,
+        Value: groupedByCity[city].length,
+      });
     });
 
     const summaryWs = XLSX.utils.json_to_sheet(summaryData, {
-      header: ['Category', 'Value', 'Count']
+      header: ['Category', 'Value', 'Count'],
     });
-    
+
     const summaryValueColumn = 'B';
     for (let i = 2; i <= summaryData.length + 1; i++) {
-        const cellAddress = `${summaryValueColumn}${i}`;
-        if (summaryWs[cellAddress] && typeof summaryWs[cellAddress].v === 'number') {
-            summaryWs[cellAddress].z = '#,##0.00';
-        }
+      const cellAddress = `${summaryValueColumn}${i}`;
+      if (summaryWs[cellAddress] && typeof summaryWs[cellAddress].v === 'number') {
+        summaryWs[cellAddress].z = '#,##0.00';
+      }
     }
-
 
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, dataWs, 'Invoices');
     XLSX.utils.book_append_sheet(wb, summaryWs, 'Summary');
-    
     XLSX.writeFile(wb, 'Invoice_Report.xlsx');
   };
+
+  const exportSecondReport = () => {
+    const incomeInvoices = sortedInvoices.filter(inv => inv.total_amount >= 0);
+
+    if (!incomeInvoices.length) {
+        return alert('No income invoices found in the selected range to generate the report.');
+    }
+
+    const cityData = incomeInvoices.reduce((acc, inv) => {
+        const city = inv.city || 'UNKNOWN';
+        if (!acc[city]) {
+            acc[city] = {
+                adjustedIncome: 0,
+                invoiceCount: 0,
+            };
+        }
+
+        const deliveryFee = inv.delivery_fee || 0;
+        const adjustedAmount = inv.total_amount - deliveryFee;
+        
+        acc[city].adjustedIncome += adjustedAmount;
+        acc[city].invoiceCount++;
+
+        return acc;
+    }, {});
+
+    const sortedCities = Object.keys(cityData).sort((a, b) => a.localeCompare(b));
+    const reportRows = [];
+    
+    reportRows.push({
+        'City': 'City',
+        'Adjusted Income': 'Adjusted Income (Total - Delivery Fees)',
+        'Invoice Count': 'Invoice Count',
+    });
+
+    let totalAdjustedIncome = 0;
+    let totalInvoices = 0;
+
+    sortedCities.forEach(city => {
+        const data = cityData[city];
+        reportRows.push({
+            'City': city,
+            'Adjusted Income': data.adjustedIncome,
+            'Invoice Count': data.invoiceCount,
+        });
+
+        totalAdjustedIncome += data.adjustedIncome;
+        totalInvoices += data.invoiceCount;
+    });
+
+    reportRows.push({});
+
+    const VAT_RATE = 1.18;
+    const totalBeforeVat = totalAdjustedIncome / VAT_RATE;
+    const tenPercentOfPreVat = totalBeforeVat * 0.10;
+    
+    reportRows.push({ 'City': '--- Overall Summary ---' });
+    reportRows.push({
+        'City': 'Total Adjusted Income (incl. VAT)',
+        'Adjusted Income': totalAdjustedIncome,
+    });
+    reportRows.push({
+        'City': 'Total Invoices',
+        'Invoice Count': totalInvoices,
+    });
+    reportRows.push({ 'City': '' });
+    
+    reportRows.push({
+        'City': 'Total Before VAT (18%)',
+        'Adjusted Income': totalBeforeVat,
+    });
+    reportRows.push({
+        'City': '10% of Pre-VAT Amount',
+        'Adjusted Income': tenPercentOfPreVat,
+    });
+
+    const worksheet = XLSX.utils.json_to_sheet(reportRows, { skipHeader: true });
+
+    const amountColumn = 'B';
+    const rowsToFormat = [
+        ...sortedCities.map((_, index) => index + 2),
+        sortedCities.length + 4,
+        sortedCities.length + 7,
+        sortedCities.length + 8,
+    ];
+    
+    rowsToFormat.forEach(rowIndex => {
+        const cellAddress = `${amountColumn}${rowIndex}`;
+        if (worksheet[cellAddress] && typeof worksheet[cellAddress].v === 'number') {
+            worksheet[cellAddress].z = '#,##0.00';
+        }
+    });
+
+    worksheet['!cols'] = [
+        { wch: 30 }, // City
+        { wch: 40 }, // Adjusted Income
+        { wch: 20 }, // Invoice Count
+    ];
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Income Report');
+
+    const today = new Date().toISOString().slice(0, 10);
+    XLSX.writeFile(workbook, `Income_Report.xlsx`);
+};
 
   const startEdit = (inv) => {
     setEditingInvoice(inv.id);
     setEditValues({
       invoice_date: inv.invoice_date,
       total_amount: inv.total_amount,
+      delivery_fee: inv.delivery_fee,
       order_reference: inv.order_reference,
       city: inv.city,
       item_row_count: inv.item_row_count,
@@ -414,7 +515,16 @@ const DashboardPage = () => {
     }
   };
 
-  const tableHeaderKeys = ['file', 'date', 'amount', 'reference', 'city', 'rowCount', 'actions'];
+  const tableHeaderKeys = [
+    'file',
+    'date',
+    'amount',
+    'delivery fee',
+    'reference',
+    'city',
+    'rowCount',
+    'actions',
+  ];
 
   if (loading)
     return (
@@ -426,7 +536,6 @@ const DashboardPage = () => {
     return (
       <div className="flex items-center justify-center h-screen text-red-700 p-4">{error}</div>
     );
-  
 
   return (
     <>
@@ -525,9 +634,27 @@ const DashboardPage = () => {
               </div>
               <div className="flex items-center gap-2">
                 {userPermissions.csvExport && (
-                  <Button className="text-xs" variant="secondary" onClick={exportExcel}>
-                    <FileDown />
-                  </Button>
+                  <>
+                    <Button
+                      className="text-xs"
+                      variant="secondary"
+                      onClick={exportExcel}
+                      title="Download Main Report"
+                    >
+                      <FileDown size={16} className="mr-1" />
+                      <span>Main Report</span>
+                    </Button>
+
+                    <Button
+                      className="text-xs"
+                      variant="secondary"
+                      onClick={() => exportSecondReport()}
+                      title="Download Summary Report"
+                    >
+                      <FileDown size={16} className="mr-1" />
+                      <span>Summary Report</span>
+                    </Button>
+                  </>
                 )}
               </div>
             </div>
@@ -565,6 +692,10 @@ const DashboardPage = () => {
                     <div style={headerStyle} className="text-sm text-slate-600 space-y-1 mb-3">
                       <p>
                         <strong>{t('date')}:</strong> {inv.invoice_date || '—'}
+                      </p>
+                      <p>
+                        <strong>{t('fee')}:</strong>{' '}
+                        {inv.delivery_fee != null ? `₪${inv.delivery_fee.toFixed(2)}` : '—'}
                       </p>
                       <p>
                         <strong>{t('reference')}:</strong> {inv.order_reference || '—'}
@@ -692,7 +823,6 @@ const DashboardPage = () => {
               <thead className="bg-slate-100 text-center">
                 <tr>
                   {tableHeaderKeys.map((headerKey) => {
-                    // --- בלוק סינון לפי סכום ---
                     if (headerKey === 'amount') {
                       const options = [
                         { value: '0-100', label: '0 - 100' },
@@ -847,6 +977,24 @@ const DashboardPage = () => {
                           />
                         ) : inv.total_amount != null ? (
                           inv.total_amount.toFixed(2)
+                        ) : (
+                          '—'
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {isEditing ? (
+                          <Input
+                            type="number"
+                            value={editValues.delivery_fee}
+                            onChange={(e) =>
+                              setEditValues((v) => ({
+                                ...v,
+                                delivery_fee: parseFloat(e.target.value),
+                              }))
+                            }
+                          />
+                        ) : inv.delivery_fee != null ? (
+                          inv.delivery_fee.toFixed(2)
                         ) : (
                           '—'
                         )}

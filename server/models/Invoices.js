@@ -15,6 +15,10 @@ const invoiceSchema = new mongoose.Schema({
         type: Number,
         required: true
     },
+     delivery_fee: {
+        type: Number,
+        default: 0
+    },
     order_reference: {
         type: String,
         default: ''

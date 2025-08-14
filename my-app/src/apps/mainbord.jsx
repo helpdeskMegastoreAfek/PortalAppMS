@@ -9,6 +9,7 @@ import {
   PackageOpen,
   File,
   Camera,
+  Code,
 } from 'lucide-react';
 
 export default function EmployeePortal() {
@@ -70,6 +71,13 @@ export default function EmployeePortal() {
       icon: <Camera className="w-6 h-6" />,
       link: '/invoiceUploader',
       accent: 'border-l-lime-400',
+    },
+    {
+      title: 'Developer',
+      description: 'Add and manage pages , logs',
+      icon: <Code className="w-6 h-6" />,
+      link: '/developer',
+      accent: 'border-l-emerald-400',
     },
     {
       title: 'Admin Panel',

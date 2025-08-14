@@ -39,9 +39,8 @@ router.get('/download/:filename', async (req, res) => {
 
 router.get('/:filename', (req, res) => {
   const { filename } = req.params;
-  const fp = 'C:\\Users\\Administrator\\Desktop\\invoice_app_exe\\dist\\invoice_script\\data\\invoices_local'
+  const fp = 'C:\\Users\\Administrator\\Desktop\\invoice_app_exe\\data\\invoices_local'
   const filePath = path.resolve(__dirname, fp, filename);
-
   if (!fs.existsSync(filePath)) {
     return res.status(404).send('File not found');
   }

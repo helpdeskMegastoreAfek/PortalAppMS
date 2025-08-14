@@ -14,6 +14,7 @@ import {
   PackageOpen,
   File,
   Camera,
+  Code,
 } from 'lucide-react';
 
 const appLinks = [
@@ -37,7 +38,11 @@ const appLinks = [
     path: '/invoiceUploader',
     icon: <Camera size={20} />,
   },
-
+  {
+    label: 'Developer',
+    path: '/developer',
+    icon: <Code size={20} />,
+  },
   {
     label: 'Admin Panel',
     path: '/admin',

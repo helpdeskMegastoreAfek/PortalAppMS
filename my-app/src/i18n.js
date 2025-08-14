@@ -43,7 +43,7 @@ const resources = {
       edit: 'Edit',
       all: 'ALL',
       negativeAmount: 'Negative Amounts',
-      allCities: 'All Cities'
+      allCities: 'All Cities',
 
       //Main page
     },
@@ -88,7 +88,7 @@ const resources = {
       edit: 'לערוך',
       all: 'הכל',
       negativeAmount: 'סכומים שליליים',
-      allCities: 'כל הערים'
+      allCities: 'כל הערים',
     },
   },
 };
