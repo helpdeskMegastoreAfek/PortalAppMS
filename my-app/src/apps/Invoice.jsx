@@ -286,197 +286,136 @@ const DashboardPage = () => {
   const anyMissing = useMemo(() => sortedInvoices.some(isStillMissing), [sortedInvoices]);
 
   const download = (fn) => fn && window.open(`${API_URL}/api/invoices/download/${fn}`, '_blank');
-  const exportExcel = () => {
-    if (!sortedInvoices.length) return alert('No data to export.');
-    const groupedByCity = sortedInvoices.reduce((acc, inv) => {
-      const city = inv.city || 'UNKNOWN';
-      if (!acc[city]) {
-        acc[city] = [];
-      }
-      acc[city].push(inv);
-      return acc;
-    }, {});
-
-    const cityOrder = [...new Set(sortedInvoices.map((inv) => inv.city || 'UNKNOWN'))];
-
-    const dataSheetRows = [];
-    cityOrder.forEach((city, index) => {
-      const invoicesInCity = groupedByCity[city];
-      if (!invoicesInCity) return;
-
-      invoicesInCity.forEach((inv) => {
-        dataSheetRows.push({
-          File: inv.filename,
-          Date: inv.invoice_date,
-          Amount: inv.total_amount,
-          Reference: inv.order_reference,
-          City: inv.city,
-          'Row Count': inv.item_row_count,
-        });
-      });
-
-      if (index < cityOrder.length - 1) {
-        dataSheetRows.push({});
-      }
-    });
-
-    const dataWs = XLSX.utils.json_to_sheet(dataSheetRows, {
-      header: ['File', 'Date', 'Amount', 'Reference', 'City', 'Row Count'],
-    });
-
-    const amountColumnIndex = 'C';
-    for (let i = 2; i <= dataSheetRows.length + 1; i++) {
-      if (dataSheetRows[i - 2] && Object.keys(dataSheetRows[i - 2]).length === 0) continue;
-      const cellAddress = `${amountColumnIndex}${i}`;
-      if (dataWs[cellAddress] && typeof dataWs[cellAddress].v === 'number') {
-        dataWs[cellAddress].z = '#,##0.00';
-      }
-    }
-
-    const totalRowCount = sortedInvoices.reduce((sum, inv) => sum + inv.item_row_count, 0);
-    const VAT_RATE = 1.18;
-    const totalBeforeVat = summary.rawNet / VAT_RATE;
-    const tenPercentOfPreVat = totalBeforeVat * 0.1;
-    const summaryData = [
-      { Category: '--- General Summary ---' },
-      { Category: 'Total Income/Orders', Value: summary.inc, Count: `${summary.cntInv} Invoices` },
-      { Category: 'Total Credits', Value: summary.cred, Count: `${summary.cntCred} Credit Notes` },
-      { Category: 'Net Total (incl. VAT)', Value: summary.net },
-      { Category: 'Total Before VAT (18%)', Value: totalBeforeVat },
-      { Category: '10% of Pre-VAT Amount', Value: tenPercentOfPreVat },
-      { Category: 'Total Row Count', Value: totalRowCount },
-      {},
-      { Category: '--- Invoices Per City ---' },
-      { Category: 'Total Orders', Count: sortedInvoices.length },
-    ];
-
-    cityOrder.forEach((city) => {
-      summaryData.push({
-        Category: city,
-        Value: groupedByCity[city].length,
-      });
-    });
-
-    const summaryWs = XLSX.utils.json_to_sheet(summaryData, {
-      header: ['Category', 'Value', 'Count'],
-    });
-
-    const summaryValueColumn = 'B';
-    for (let i = 2; i <= summaryData.length + 1; i++) {
-      const cellAddress = `${summaryValueColumn}${i}`;
-      if (summaryWs[cellAddress] && typeof summaryWs[cellAddress].v === 'number') {
-        summaryWs[cellAddress].z = '#,##0.00';
-      }
-    }
-
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, dataWs, 'Invoices');
-    XLSX.utils.book_append_sheet(wb, summaryWs, 'Summary');
-    XLSX.writeFile(wb, 'Invoice_Report.xlsx');
-  };
-
-  const exportSecondReport = () => {
+ 
+  const exportReport = () => {
     const incomeInvoices = sortedInvoices.filter(inv => inv.total_amount >= 0);
 
     if (!incomeInvoices.length) {
         return alert('No income invoices found in the selected range to generate the report.');
     }
 
-    const cityData = incomeInvoices.reduce((acc, inv) => {
+    const cityOrder = [...new Set(incomeInvoices.map(inv => inv.city || 'UNKNOWN'))].sort((a,b) => a.localeCompare(b));
+    const groupedByCity = incomeInvoices.reduce((acc, inv) => {
         const city = inv.city || 'UNKNOWN';
-        if (!acc[city]) {
-            acc[city] = {
-                adjustedIncome: 0,
-                invoiceCount: 0,
-            };
-        }
-
-        const deliveryFee = inv.delivery_fee || 0;
-        const adjustedAmount = inv.total_amount - deliveryFee;
-        
-        acc[city].adjustedIncome += adjustedAmount;
-        acc[city].invoiceCount++;
-
+        if (!acc[city]) { acc[city] = []; }
+        acc[city].push(inv);
         return acc;
     }, {});
 
-    const sortedCities = Object.keys(cityData).sort((a, b) => a.localeCompare(b));
-    const reportRows = [];
-    
-    reportRows.push({
-        'City': 'City',
-        'Adjusted Income': 'Adjusted Income (Total - Delivery Fees)',
-        'Invoice Count': 'Invoice Count',
+    const dataSheetRows = [];
+    cityOrder.forEach((city, index) => {
+        const invoicesInCity = groupedByCity[city];
+        
+        invoicesInCity.forEach(inv => {
+            const deliveryFee = inv.delivery_fee || 0;
+            dataSheetRows.push({
+                'File': inv.filename,
+                'Date': inv.invoice_date,
+                'Reference': inv.order_reference,
+                'Original Amount': inv.total_amount,
+                'Delivery Fee': deliveryFee,
+                'Adjusted Amount': inv.total_amount - deliveryFee,
+                'City': inv.city,
+            });
+        });
+
+        if (index < cityOrder.length - 1) {
+            dataSheetRows.push({}); 
+        }
+    });
+
+    const dataWs = XLSX.utils.json_to_sheet(dataSheetRows);
+
+    ['C', 'D', 'E'].forEach(col => {
+        for (let i = 2; i <= dataSheetRows.length + 1; i++) {
+            if (dataSheetRows[i-2] && Object.keys(dataSheetRows[i-2]).length === 0) continue;
+            const cellAddress = `${col}${i}`;
+            if (dataWs[cellAddress] && typeof dataWs[cellAddress].v === 'number') {
+                dataWs[cellAddress].z = '#,##0.00';
+            }
+        }
+    });
+
+    dataWs['!cols'] = [ {wch: 25}, {wch: 12}, {wch: 20}, {wch: 15}, {wch: 15}, {wch: 15}, {wch: 20}, {wch: 20} ];
+
+    const cityData = incomeInvoices.reduce((acc, inv) => {
+        const city = inv.city || 'UNKNOWN';
+        if (!acc[city]) {
+            acc[city] = { adjustedIncome: 0, invoiceCount: 0 };
+        }
+        const deliveryFee = inv.delivery_fee || 0;
+        acc[city].adjustedIncome += (inv.total_amount - deliveryFee);
+        acc[city].invoiceCount++;
+        return acc;
+    }, {});
+
+    const summaryReportRows = [];
+    summaryReportRows.push({
+        'Category': 'City',
+        'Value': 'Adjusted Income (Total - Delivery Fees)',
+        'Count': 'Invoice Count',
     });
 
     let totalAdjustedIncome = 0;
     let totalInvoices = 0;
 
-    sortedCities.forEach(city => {
+    cityOrder.forEach(city => { 
         const data = cityData[city];
-        reportRows.push({
-            'City': city,
-            'Adjusted Income': data.adjustedIncome,
-            'Invoice Count': data.invoiceCount,
+        summaryReportRows.push({
+            'Category': city,
+            'Value': data.adjustedIncome,
+            'Count': data.invoiceCount,
         });
-
         totalAdjustedIncome += data.adjustedIncome;
         totalInvoices += data.invoiceCount;
     });
 
-    reportRows.push({});
+    summaryReportRows.push({});
 
     const VAT_RATE = 1.18;
     const totalBeforeVat = totalAdjustedIncome / VAT_RATE;
     const tenPercentOfPreVat = totalBeforeVat * 0.10;
     
-    reportRows.push({ 'City': '--- Overall Summary ---' });
-    reportRows.push({
-        'City': 'Total Adjusted Income (incl. VAT)',
-        'Adjusted Income': totalAdjustedIncome,
+    summaryReportRows.push({ 'Category': '--- Overall Summary ---' });
+    summaryReportRows.push({
+        'Category': 'Total Adjusted Income (incl. VAT)',
+        'Value': totalAdjustedIncome,
     });
-    reportRows.push({
-        'City': 'Total Invoices',
-        'Invoice Count': totalInvoices,
+    summaryReportRows.push({
+        'Category': 'Total Invoices',
+        'Count': totalInvoices,
     });
-    reportRows.push({ 'City': '' });
-    
-    reportRows.push({
-        'City': 'Total Before VAT (18%)',
-        'Adjusted Income': totalBeforeVat,
+    summaryReportRows.push({ 'Category': '' });
+    summaryReportRows.push({
+        'Category': 'Total Before VAT (18%)',
+        'Value': totalBeforeVat,
     });
-    reportRows.push({
-        'City': '10% of Pre-VAT Amount',
-        'Adjusted Income': tenPercentOfPreVat,
+    summaryReportRows.push({
+        'Category': '10% of Pre-VAT Amount',
+        'Value': tenPercentOfPreVat,
     });
 
-    const worksheet = XLSX.utils.json_to_sheet(reportRows, { skipHeader: true });
+    const summaryWs = XLSX.utils.json_to_sheet(summaryReportRows, { skipHeader: true });
 
-    const amountColumn = 'B';
-    const rowsToFormat = [
-        ...sortedCities.map((_, index) => index + 2),
-        sortedCities.length + 4,
-        sortedCities.length + 7,
-        sortedCities.length + 8,
+    const summaryAmountColumn = 'B';
+    const summaryRowsToFormat = [
+        ...cityOrder.map((_, index) => index + 2),
+        cityOrder.length + 4,
+        cityOrder.length + 7,
+        cityOrder.length + 8,
     ];
-    
-    rowsToFormat.forEach(rowIndex => {
-        const cellAddress = `${amountColumn}${rowIndex}`;
-        if (worksheet[cellAddress] && typeof worksheet[cellAddress].v === 'number') {
-            worksheet[cellAddress].z = '#,##0.00';
+    summaryRowsToFormat.forEach(rowIndex => {
+        const cellAddress = `${summaryAmountColumn}${rowIndex}`;
+        if (summaryWs[cellAddress] && typeof summaryWs[cellAddress].v === 'number') {
+            summaryWs[cellAddress].z = '#,##0.00';
         }
     });
-
-    worksheet['!cols'] = [
-        { wch: 30 }, // City
-        { wch: 40 }, // Adjusted Income
-        { wch: 20 }, // Invoice Count
-    ];
+    
+    summaryWs['!cols'] = [ {wch: 35}, {wch: 20}, {wch: 20} ];
 
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Income Report');
-
-    const today = new Date().toISOString().slice(0, 10);
+    XLSX.utils.book_append_sheet(workbook, dataWs, 'Income Invoices Details');
+    XLSX.utils.book_append_sheet(workbook, summaryWs, 'Income Summary');
     XLSX.writeFile(workbook, `Income_Report.xlsx`);
 };
 
@@ -638,21 +577,11 @@ const DashboardPage = () => {
                     <Button
                       className="text-xs"
                       variant="secondary"
-                      onClick={exportExcel}
-                      title="Download Main Report"
-                    >
-                      <FileDown size={16} className="mr-1" />
-                      <span>Main Report</span>
-                    </Button>
-
-                    <Button
-                      className="text-xs"
-                      variant="secondary"
-                      onClick={() => exportSecondReport()}
+                      onClick={() => exportReport()}
                       title="Download Summary Report"
                     >
-                      <FileDown size={16} className="mr-1" />
-                      <span>Summary Report</span>
+                      <FileDown size={18} className="mr-1" />
+                      <span>Export Report</span>
                     </Button>
                   </>
                 )}
