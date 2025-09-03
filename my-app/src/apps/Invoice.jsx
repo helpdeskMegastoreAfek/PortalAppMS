@@ -286,138 +286,151 @@ const DashboardPage = () => {
   const anyMissing = useMemo(() => sortedInvoices.some(isStillMissing), [sortedInvoices]);
 
   const download = (fn) => fn && window.open(`${API_URL}/api/invoices/download/${fn}`, '_blank');
- 
+
   const exportReport = () => {
-    const incomeInvoices = sortedInvoices.filter(inv => inv.total_amount >= 0);
+    const incomeInvoices = sortedInvoices.filter((inv) => inv.total_amount >= 0);
 
     if (!incomeInvoices.length) {
-        return alert('No income invoices found in the selected range to generate the report.');
+      return alert('No income invoices found in the selected range to generate the report.');
     }
 
-    const cityOrder = [...new Set(incomeInvoices.map(inv => inv.city || 'UNKNOWN'))].sort((a,b) => a.localeCompare(b));
+    const cityOrder = [...new Set(incomeInvoices.map((inv) => inv.city || 'UNKNOWN'))].sort(
+      (a, b) => a.localeCompare(b)
+    );
     const groupedByCity = incomeInvoices.reduce((acc, inv) => {
-        const city = inv.city || 'UNKNOWN';
-        if (!acc[city]) { acc[city] = []; }
-        acc[city].push(inv);
-        return acc;
+      const city = inv.city || 'UNKNOWN';
+      if (!acc[city]) {
+        acc[city] = [];
+      }
+      acc[city].push(inv);
+      return acc;
     }, {});
 
     const dataSheetRows = [];
     cityOrder.forEach((city, index) => {
-        const invoicesInCity = groupedByCity[city];
-        
-        invoicesInCity.forEach(inv => {
-            const deliveryFee = inv.delivery_fee || 0;
-            dataSheetRows.push({
-                'File': inv.filename,
-                'Date': inv.invoice_date,
-                'Reference': inv.order_reference,
-                'Original Amount': inv.total_amount,
-                'Delivery Fee': deliveryFee,
-                'Adjusted Amount': inv.total_amount - deliveryFee,
-                'City': inv.city,
-            });
-        });
+      const invoicesInCity = groupedByCity[city];
 
-        if (index < cityOrder.length - 1) {
-            dataSheetRows.push({}); 
-        }
+      invoicesInCity.forEach((inv) => {
+        const deliveryFee = inv.delivery_fee || 0;
+        dataSheetRows.push({
+          File: inv.filename,
+          Date: inv.invoice_date,
+          Reference: inv.order_reference,
+          'Original Amount': inv.total_amount,
+          'Delivery Fee': deliveryFee,
+          'Adjusted Amount': inv.total_amount - deliveryFee,
+          City: inv.city,
+        });
+      });
+
+      if (index < cityOrder.length - 1) {
+        dataSheetRows.push({});
+      }
     });
 
     const dataWs = XLSX.utils.json_to_sheet(dataSheetRows);
 
-    ['C', 'D', 'E'].forEach(col => {
-        for (let i = 2; i <= dataSheetRows.length + 1; i++) {
-            if (dataSheetRows[i-2] && Object.keys(dataSheetRows[i-2]).length === 0) continue;
-            const cellAddress = `${col}${i}`;
-            if (dataWs[cellAddress] && typeof dataWs[cellAddress].v === 'number') {
-                dataWs[cellAddress].z = '#,##0.00';
-            }
+    ['C', 'D', 'E'].forEach((col) => {
+      for (let i = 2; i <= dataSheetRows.length + 1; i++) {
+        if (dataSheetRows[i - 2] && Object.keys(dataSheetRows[i - 2]).length === 0) continue;
+        const cellAddress = `${col}${i}`;
+        if (dataWs[cellAddress] && typeof dataWs[cellAddress].v === 'number') {
+          dataWs[cellAddress].z = '#,##0.00';
         }
+      }
     });
 
-    dataWs['!cols'] = [ {wch: 25}, {wch: 12}, {wch: 20}, {wch: 15}, {wch: 15}, {wch: 15}, {wch: 20}, {wch: 20} ];
+    dataWs['!cols'] = [
+      { wch: 25 },
+      { wch: 12 },
+      { wch: 20 },
+      { wch: 15 },
+      { wch: 15 },
+      { wch: 15 },
+      { wch: 20 },
+      { wch: 20 },
+    ];
 
     const cityData = incomeInvoices.reduce((acc, inv) => {
-        const city = inv.city || 'UNKNOWN';
-        if (!acc[city]) {
-            acc[city] = { adjustedIncome: 0, invoiceCount: 0 };
-        }
-        const deliveryFee = inv.delivery_fee || 0;
-        acc[city].adjustedIncome += (inv.total_amount - deliveryFee);
-        acc[city].invoiceCount++;
-        return acc;
+      const city = inv.city || 'UNKNOWN';
+      if (!acc[city]) {
+        acc[city] = { adjustedIncome: 0, invoiceCount: 0 };
+      }
+      const deliveryFee = inv.delivery_fee || 0;
+      acc[city].adjustedIncome += inv.total_amount - deliveryFee;
+      acc[city].invoiceCount++;
+      return acc;
     }, {});
 
     const summaryReportRows = [];
     summaryReportRows.push({
-        'Category': 'City',
-        'Value': 'Adjusted Income (Total - Delivery Fees)',
-        'Count': 'Invoice Count',
+      Category: 'City',
+      Value: 'Adjusted Income (Total - Delivery Fees)',
+      Count: 'Invoice Count',
     });
 
     let totalAdjustedIncome = 0;
     let totalInvoices = 0;
 
-    cityOrder.forEach(city => { 
-        const data = cityData[city];
-        summaryReportRows.push({
-            'Category': city,
-            'Value': data.adjustedIncome,
-            'Count': data.invoiceCount,
-        });
-        totalAdjustedIncome += data.adjustedIncome;
-        totalInvoices += data.invoiceCount;
+    cityOrder.forEach((city) => {
+      const data = cityData[city];
+      summaryReportRows.push({
+        Category: city,
+        Value: data.adjustedIncome,
+        Count: data.invoiceCount,
+      });
+      totalAdjustedIncome += data.adjustedIncome;
+      totalInvoices += data.invoiceCount;
     });
 
     summaryReportRows.push({});
 
     const VAT_RATE = 1.18;
     const totalBeforeVat = totalAdjustedIncome / VAT_RATE;
-    const tenPercentOfPreVat = totalBeforeVat * 0.10;
-    
-    summaryReportRows.push({ 'Category': '--- Overall Summary ---' });
+    const tenPercentOfPreVat = totalBeforeVat * 0.1;
+
+    summaryReportRows.push({ Category: '--- Overall Summary ---' });
     summaryReportRows.push({
-        'Category': 'Total Adjusted Income (incl. VAT)',
-        'Value': totalAdjustedIncome,
+      Category: 'Total Adjusted Income (incl. VAT)',
+      Value: totalAdjustedIncome,
     });
     summaryReportRows.push({
-        'Category': 'Total Invoices',
-        'Count': totalInvoices,
+      Category: 'Total Invoices',
+      Count: totalInvoices,
     });
-    summaryReportRows.push({ 'Category': '' });
+    summaryReportRows.push({ Category: '' });
     summaryReportRows.push({
-        'Category': 'Total Before VAT (18%)',
-        'Value': totalBeforeVat,
+      Category: 'Total Before VAT (18%)',
+      Value: totalBeforeVat,
     });
     summaryReportRows.push({
-        'Category': '10% of Pre-VAT Amount',
-        'Value': tenPercentOfPreVat,
+      Category: '10% of Pre-VAT Amount',
+      Value: tenPercentOfPreVat,
     });
 
     const summaryWs = XLSX.utils.json_to_sheet(summaryReportRows, { skipHeader: true });
 
     const summaryAmountColumn = 'B';
     const summaryRowsToFormat = [
-        ...cityOrder.map((_, index) => index + 2),
-        cityOrder.length + 4,
-        cityOrder.length + 7,
-        cityOrder.length + 8,
+      ...cityOrder.map((_, index) => index + 2),
+      cityOrder.length + 4,
+      cityOrder.length + 7,
+      cityOrder.length + 8,
     ];
-    summaryRowsToFormat.forEach(rowIndex => {
-        const cellAddress = `${summaryAmountColumn}${rowIndex}`;
-        if (summaryWs[cellAddress] && typeof summaryWs[cellAddress].v === 'number') {
-            summaryWs[cellAddress].z = '#,##0.00';
-        }
+    summaryRowsToFormat.forEach((rowIndex) => {
+      const cellAddress = `${summaryAmountColumn}${rowIndex}`;
+      if (summaryWs[cellAddress] && typeof summaryWs[cellAddress].v === 'number') {
+        summaryWs[cellAddress].z = '#,##0.00';
+      }
     });
-    
-    summaryWs['!cols'] = [ {wch: 35}, {wch: 20}, {wch: 20} ];
+
+    summaryWs['!cols'] = [{ wch: 35 }, { wch: 20 }, { wch: 20 }];
 
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, dataWs, 'Income Invoices Details');
     XLSX.utils.book_append_sheet(workbook, summaryWs, 'Income Summary');
     XLSX.writeFile(workbook, `Income_Report.xlsx`);
-};
+  };
 
   const startEdit = (inv) => {
     setEditingInvoice(inv.id);

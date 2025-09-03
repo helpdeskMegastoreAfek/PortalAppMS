@@ -16,7 +16,7 @@ import Invoice from './apps/Invoice';
 // import AdminMealOrdering from "./apps/AdminMealOrdering";
 import InvoiceUploader from './components/InvoiceUploader';
 import Developer from './apps/developer';
-
+// import ServicePage from './apps/Service';
 import './index.css';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
@@ -35,6 +35,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
           {/* <Route path="/adminMeal" element={<AdminMealOrdering />} /> */}
           <Route path="/invoiceUploader" element={<InvoiceUploader />} />
           <Route path="/developer" element={<Developer />} />
+          {/* <Route path='/service' element={<ServicePage/>}/> */}
         </Routes>
       </BrowserRouter>
     </LocalizationProvider>

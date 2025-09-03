@@ -13,8 +13,8 @@ export default defineConfig({
       "172.20.0.49",
     ],
   https:{
-    key: fs.readFileSync('./localhost+1-key.pem'),
-    cert: fs.readFileSync('./localhost+1.pem'),
+    key: fs.readFileSync('./172.20.0.49-key.pem'),
+    cert: fs.readFileSync('./172.20.0.49.pem'),
   },
   
   },

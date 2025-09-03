@@ -52,7 +52,7 @@ export default function EmployeePortal() {
       accent: 'border-l-green-400',
     },
     {
-      title: 'Service Tickets',
+      title: 'Service',
       description: 'Submit and track service requests',
       icon: <Wrench className="w-6 h-6" />,
       link: '/service',

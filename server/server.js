@@ -13,10 +13,15 @@ const app = express();
 
 const corsOptions = {
   origin: [
-    'https://172.20.0.49:5173',
-    'https://localhost:5173',    
-    'http://localhost:4173'   
+    "https://172.20.0.49:5173",
+  "http://172.20.0.49:5173",
+  "https://localhost:5173",
+  "http://localhost:5173",
+  "http://localhost:4173",   
   ],
+  credentials: true,   
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
   optionsSuccessStatus: 200 
 };  
 
@@ -49,8 +54,8 @@ const logsRoutes = require('./routes/logs')
 app.use("/api/logs", logsRoutes)
 
 const httpsOptions = {
-  key: fs.readFileSync('../my-app/localhost+1-key.pem'), 
-  cert: fs.readFileSync('../my-app/localhost+1.pem')
+  key: fs.readFileSync('../my-app/172.20.0.49-key.pem'), 
+  cert: fs.readFileSync('../my-app/172.20.0.49.pem')
 }
 
 mongoose
