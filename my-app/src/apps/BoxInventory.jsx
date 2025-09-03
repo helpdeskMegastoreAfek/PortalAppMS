@@ -102,10 +102,27 @@ export default function BoxInventory() {
     }
   };
 
-  const updateInventory = (id, value) =>
-    setInventory((prev) => ({ ...prev, [id]: Math.max(0, Number.parseInt(value) || 0) }));
+  const updateInventory = (id, value) => {
+    // If the input is empty, store an empty string in the state
+    if (value === '') {
+      setInventory((prev) => ({ ...prev, [id]: '' }));
+    } else {
+      // Otherwise, parse the number
+      const num = parseInt(value, 10);
+      // Update state only if it's a valid, non-negative number
+      if (!isNaN(num)) {
+        setInventory((prev) => ({ ...prev, [id]: Math.max(0, num) }));
+      }
+    }
+  };
+
+  // CHANGED: This function now correctly handles cases where the state might be an empty string.
   const adjustInventory = (id, delta) =>
-    setInventory((prev) => ({ ...prev, [id]: Math.max(0, prev[id] + delta) }));
+    setInventory((prev) => ({
+      ...prev,
+      // Convert the current value to a number ('' becomes 0) before calculating
+      [id]: Math.max(0, (Number(prev[id]) || 0) + delta),
+    }));
 
   const handleBarcodeScan = (e) => {
     if (e) e.preventDefault();

@@ -70,6 +70,23 @@ router.put('/:id/barcodes', async (req, res) => {
     }
 });
 
+router.put('/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const updates = req.body;
+
+        const updatedInventory = await Inventory.findByIdAndUpdate(id, updates, { new: true, runValidators: true });
+
+        if (!updatedInventory) {
+            return res.status(404).json({ message: 'Inventory record not found' });
+        }
+
+        res.status(200).json(updatedInventory);
+    } catch (error) { 
+        console.error('Error updating inventory:', error);
+        res.status(500).json({ message: 'Error updating inventory', details: error.message });
+    } 
+});
 
 router.delete('/:id', async (req, res) => {
     try {
