@@ -19,7 +19,7 @@ function SearchInput({ value, onChange }) {
       InputProps={{
         startAdornment: (
           <InputAdornment position="start">
-            <SearchIcon />
+            <Search />
           </InputAdornment>
         ),
       }}
@@ -58,6 +58,7 @@ const transformMongoInvoice = (mongoDoc) => ({
     ? new Date(mongoDoc.invoice_date).toISOString().substring(0, 10)
     : null,
   total_amount: mongoDoc.total_amount ?? null,
+  subtotal_amount: mongoDoc.subtotal_amount ?? null,
   delivery_fee: mongoDoc.delivery_fee ?? null,
   order_reference: mongoDoc.order_reference || '',
   city: mongoDoc.city || '',
@@ -115,9 +116,15 @@ const DashboardPage = () => {
     deleteInvoices: false,
     csvExport: false,
   });
+
   const [amountRangeFilter, setAmountRangeFilter] = useState('');
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
+
+  // ADDED: State for Subtotal filter
+  const [subtotalAnchorEl, setSubtotalAnchorEl] = useState(null);
+  const [subtotalRangeFilter, setSubtotalRangeFilter] = useState('');
+  const openSubtotalMenu = Boolean(subtotalAnchorEl);
 
   const [cityAnchorEl, setCityAnchorEl] = useState(null);
   const [selectedCity, setSelectedCity] = useState('');
@@ -146,6 +153,18 @@ const DashboardPage = () => {
   const handleMenuItemClick = (value) => {
     setAmountRangeFilter(value);
     handleClose();
+  };
+
+  // ADDED: Handlers for Subtotal filter menu
+  const handleSubtotalClick = (event) => {
+    setSubtotalAnchorEl(event.currentTarget);
+  };
+  const handleSubtotalClose = () => {
+    setSubtotalAnchorEl(null);
+  };
+  const handleSubtotalMenuItemClick = (value) => {
+    setSubtotalRangeFilter(value);
+    handleSubtotalClose();
   };
 
   const handleCityClick = (event) => setCityAnchorEl(event.currentTarget);
@@ -199,18 +218,30 @@ const DashboardPage = () => {
     setCurrentPage(1);
   }, [searchTerm, startDate, endDate, itemsPerPage]);
 
-  const hasMissing = (inv) =>
-    !inv.filename ||
-    !inv.invoice_date ||
-    inv.total_amount == null ||
-    inv.total_amount == 0 ||
-    inv.delivery_fee == null ||
-    inv.delivery_fee == 0 ||
-    !inv.order_reference ||
-    !inv.city ||
-    inv.item_row_count <= 0 ||
-    inv.city == 'UNKNOWN';
+  const hasMissing = (inv) => {
+    const subtotalCheckCutoffDate = '2025-07-01';
 
+    const isSubtotalMissingAfterCutoff =
+      inv.invoice_date &&
+      inv.invoice_date >= subtotalCheckCutoffDate &&
+      (inv.subtotal_amount == null || inv.subtotal_amount === 0);
+
+    return (
+      !inv.filename ||
+      !inv.invoice_date ||
+      inv.total_amount == null ||
+      inv.total_amount === 0 ||
+      inv.delivery_fee == null ||
+      inv.delivery_fee === 0 ||
+      !inv.order_reference ||
+      !inv.city ||
+      inv.item_row_count <= 0 ||
+      inv.city === 'UNKNOWN' ||
+      isSubtotalMissingAfterCutoff
+    );
+  };
+
+  // MODIFIED: Added subtotal filter logic
   const filtered = useMemo(
     () =>
       invoices.filter((inv) => {
@@ -235,9 +266,26 @@ const DashboardPage = () => {
           }
         }
 
-        return matchSearch && matchStart && matchEnd && amountMatch && cityMatch;
+        // ADDED: Subtotal filter logic
+        let subtotalAmountMatch = true;
+        if (subtotalRangeFilter) {
+          const subtotal = inv.subtotal_amount ?? 0;
+          if (subtotalRangeFilter === 'negative') {
+            subtotalAmountMatch = subtotal < 0;
+          } else if (subtotalRangeFilter.includes('+')) {
+            const lowerBound = parseInt(subtotalRangeFilter, 10);
+            subtotalAmountMatch = subtotal >= lowerBound;
+          } else {
+            const [min, max] = subtotalRangeFilter.split('-').map(Number);
+            subtotalAmountMatch = subtotal >= min && subtotal <= max;
+          }
+        }
+
+        return (
+          matchSearch && matchStart && matchEnd && amountMatch && cityMatch && subtotalAmountMatch
+        );
       }),
-    [invoices, searchTerm, startDate, endDate, amountRangeFilter, selectedCity]
+    [invoices, searchTerm, startDate, endDate, amountRangeFilter, selectedCity, subtotalRangeFilter] // MODIFIED: Added dependency
   );
 
   const summary = useMemo(() => {
@@ -312,13 +360,23 @@ const DashboardPage = () => {
 
       invoicesInCity.forEach((inv) => {
         const deliveryFee = inv.delivery_fee || 0;
+
+        let adjustedSubtotal = inv.subtotal_amount || 0;
+
+        if (deliveryFee === 29.9) {
+          adjustedSubtotal -= 24.519;
+        }
+
         dataSheetRows.push({
           File: inv.filename,
           Date: inv.invoice_date,
           Reference: inv.order_reference,
           'Original Amount': inv.total_amount,
-          'Delivery Fee': deliveryFee,
           'Adjusted Amount': inv.total_amount - deliveryFee,
+          'Original Subtotal with fee': inv.subtotal_amount,
+          'Adjusted Subtotal without fee': adjustedSubtotal,
+          'Delivery Fee': deliveryFee,
+          'Item Count': inv.item_row_count || 0,
           City: inv.city,
         });
       });
@@ -330,7 +388,7 @@ const DashboardPage = () => {
 
     const dataWs = XLSX.utils.json_to_sheet(dataSheetRows);
 
-    ['C', 'D', 'E'].forEach((col) => {
+    ['D', 'E', 'F', 'G', 'H'].forEach((col) => {
       for (let i = 2; i <= dataSheetRows.length + 1; i++) {
         if (dataSheetRows[i - 2] && Object.keys(dataSheetRows[i - 2]).length === 0) continue;
         const cellAddress = `${col}${i}`;
@@ -342,35 +400,54 @@ const DashboardPage = () => {
 
     dataWs['!cols'] = [
       { wch: 25 },
-      { wch: 12 },
-      { wch: 20 },
-      { wch: 15 },
-      { wch: 15 },
-      { wch: 15 },
-      { wch: 20 },
-      { wch: 20 },
+      { wch: 25 },
+      { wch: 25 },
+      { wch: 25 },
+      { wch: 25 }, // Original Subtotal
+      { wch: 25 }, // Adjusted Subtotal (NEW)
+      { wch: 25 },
+      { wch: 25 },
+      { wch: 25 },
+      { wch: 25 },
     ];
 
     const cityData = incomeInvoices.reduce((acc, inv) => {
       const city = inv.city || 'UNKNOWN';
       if (!acc[city]) {
-        acc[city] = { adjustedIncome: 0, invoiceCount: 0 };
+        acc[city] = {
+          adjustedIncome: 0,
+          invoiceCount: 0,
+          totalAdjustedSubtotal: 0,
+          totalItemCount: 0,
+        };
       }
+
       const deliveryFee = inv.delivery_fee || 0;
+
+      let adjustedSubtotal = inv.subtotal_amount || 0;
+      if (deliveryFee === 29.9) {
+        adjustedSubtotal -= 24.519;
+      }
+      acc[city].totalAdjustedSubtotal += adjustedSubtotal;
       acc[city].adjustedIncome += inv.total_amount - deliveryFee;
       acc[city].invoiceCount++;
+      acc[city].totalItemCount += inv.item_row_count || 0;
       return acc;
     }, {});
 
     const summaryReportRows = [];
     summaryReportRows.push({
       Category: 'City',
-      Value: 'Adjusted Income (Total - Delivery Fees)',
+      Value: 'Total Delivery after VAT',
       Count: 'Invoice Count',
+      Subtotal: 'Total before 18% VAT per city',
+      Items: 'Items count',
     });
 
     let totalAdjustedIncome = 0;
     let totalInvoices = 0;
+    let grandTotalAdjustedSubtotal = 0;
+    let grandTotalItemCount = 0;
 
     cityOrder.forEach((city) => {
       const data = cityData[city];
@@ -378,16 +455,19 @@ const DashboardPage = () => {
         Category: city,
         Value: data.adjustedIncome,
         Count: data.invoiceCount,
+        Subtotal: data.totalAdjustedSubtotal,
+        Items: data.totalItemCount,
       });
       totalAdjustedIncome += data.adjustedIncome;
       totalInvoices += data.invoiceCount;
+      grandTotalAdjustedSubtotal += data.totalAdjustedSubtotal;
+      grandTotalItemCount += data.totalItemCount;
     });
 
     summaryReportRows.push({});
 
-    const VAT_RATE = 1.18;
-    const totalBeforeVat = totalAdjustedIncome / VAT_RATE;
-    const tenPercentOfPreVat = totalBeforeVat * 0.1;
+    const totalBeforeVat = grandTotalAdjustedSubtotal;
+    const tenPercentOfPreVat = parseFloat((totalBeforeVat * 0.1).toFixed(2));
 
     summaryReportRows.push({ Category: '--- Overall Summary ---' });
     summaryReportRows.push({
@@ -395,36 +475,47 @@ const DashboardPage = () => {
       Value: totalAdjustedIncome,
     });
     summaryReportRows.push({
-      Category: 'Total Invoices',
-      Count: totalInvoices,
-    });
-    summaryReportRows.push({ Category: '' });
-    summaryReportRows.push({
-      Category: 'Total Before VAT (18%)',
-      Value: totalBeforeVat,
+      Category: 'Total Before 18% VAT ',
+      Value: grandTotalAdjustedSubtotal,
     });
     summaryReportRows.push({
-      Category: '10% of Pre-VAT Amount',
+      Category: '10% of Pre-VAT (from Adjusted Income)',
       Value: tenPercentOfPreVat,
     });
-
+    summaryReportRows.push({ Category: 'Total Invoices', Count: totalInvoices });
+    summaryReportRows.push({ Category: 'Total item count', Items: grandTotalItemCount });
+    summaryReportRows.push({ Category: '' });
     const summaryWs = XLSX.utils.json_to_sheet(summaryReportRows, { skipHeader: true });
 
-    const summaryAmountColumn = 'B';
-    const summaryRowsToFormat = [
-      ...cityOrder.map((_, index) => index + 2),
-      cityOrder.length + 4,
-      cityOrder.length + 7,
-      cityOrder.length + 8,
+    const summaryAmountColumnB = 'B';
+    const summaryAmountColumnD = 'D';
+
+    const cityRowsCount = cityOrder.length;
+    const summaryRowsToFormatB = [
+      ...Array.from({ length: cityRowsCount }, (_, i) => i + 2),
+      cityRowsCount + 4, // Total Adjusted Income
+      cityRowsCount + 5, // Grand Total of Adjusted Subtotals (NEW)
+      cityRowsCount + 8, // Total Before VAT
+      cityRowsCount + 9, // 10% of Pre-VAT
     ];
-    summaryRowsToFormat.forEach((rowIndex) => {
-      const cellAddress = `${summaryAmountColumn}${rowIndex}`;
+
+    summaryRowsToFormatB.forEach((rowIndex) => {
+      const cellAddress = `${summaryAmountColumnB}${rowIndex}`;
       if (summaryWs[cellAddress] && typeof summaryWs[cellAddress].v === 'number') {
         summaryWs[cellAddress].z = '#,##0.00';
       }
     });
 
-    summaryWs['!cols'] = [{ wch: 35 }, { wch: 20 }, { wch: 20 }];
+    const summaryRowsToFormatD = Array.from({ length: cityRowsCount }, (_, i) => i + 2);
+    summaryRowsToFormatD.forEach((rowIndex) => {
+      const cellAddress = `${summaryAmountColumnD}${rowIndex}`;
+      if (summaryWs[cellAddress] && typeof summaryWs[cellAddress].v === 'number') {
+        summaryWs[cellAddress].z = '#,##0.00';
+      }
+    });
+
+    // MODIFIED: עדכון רוחב העמודות בסיכום
+    summaryWs['!cols'] = [{ wch: 35 }, { wch: 20 }, { wch: 20 }, { wch: 25 }]; // נוספה עמודה
 
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, dataWs, 'Income Invoices Details');
@@ -437,6 +528,7 @@ const DashboardPage = () => {
     setEditValues({
       invoice_date: inv.invoice_date,
       total_amount: inv.total_amount,
+      subtotal_amount: inv.subtotal_amount,
       delivery_fee: inv.delivery_fee,
       order_reference: inv.order_reference,
       city: inv.city,
@@ -458,7 +550,6 @@ const DashboardPage = () => {
         throw new Error((await res.text()) || 'Failed to delete invoice');
       }
 
-      // Remove the invoice from the local state
       setInvoices((prevInvoices) => prevInvoices.filter((inv) => inv.id !== invoiceId));
       alert(t('invoiceDeletedSuccess'));
     } catch (e) {
@@ -471,6 +562,7 @@ const DashboardPage = () => {
     'file',
     'date',
     'amount',
+    'subtotal',
     'delivery fee',
     'reference',
     'city',
@@ -821,8 +913,62 @@ const DashboardPage = () => {
                       );
                     }
 
-                    // --- בלוק חדש ונפרד עבור סינון העיר ---
-                    if (headerKey === 'city') {
+                    // ADDED: Logic for subtotal filter menu
+                    else if (headerKey === 'subtotal') {
+                      const options = [
+                        { value: '0-100', label: '0 - 100' },
+                        { value: '101-200', label: '101 - 200' },
+                        { value: '201-500', label: '201 - 500' },
+                        { value: '501-1000', label: '501 - 1000' },
+                        { value: '1001+', label: '1001+' },
+                        { value: 'negative', label: 'Negative Amounts' },
+                      ];
+                      let displayText;
+                      if (subtotalRangeFilter === '') {
+                        displayText = `${t('subtotal')}`;
+                      } else {
+                        const selectedOption = options.find(
+                          (opt) => opt.value === subtotalRangeFilter
+                        );
+                        displayText = selectedOption ? selectedOption.label : '';
+                      }
+
+                      return (
+                        <th
+                          key={headerKey}
+                          className="px-6 py-3 font-medium uppercase text-slate-600"
+                        >
+                          <button
+                            onClick={handleSubtotalClick}
+                            className="flex items-center justify-center w-full bg-transparent border-none p-0 cursor-pointer"
+                          >
+                            <span className="font-medium uppercase text-slate-600">
+                              {displayText}
+                            </span>
+                            <EllipsisVertical size={18} className="ml-1" />
+                          </button>
+                          <Menu
+                            anchorEl={subtotalAnchorEl}
+                            open={openSubtotalMenu}
+                            onClose={handleSubtotalClose}
+                            anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+                            transformOrigin={{ vertical: 'top', horizontal: 'center' }}
+                          >
+                            <MenuItem onClick={() => handleSubtotalMenuItemClick('')}>
+                              <em>All</em>
+                            </MenuItem>
+                            {options.map((option) => (
+                              <MenuItem
+                                key={option.value}
+                                onClick={() => handleSubtotalMenuItemClick(option.value)}
+                              >
+                                {option.label}
+                              </MenuItem>
+                            ))}
+                          </Menu>
+                        </th>
+                      );
+                    } else if (headerKey === 'city') {
                       return (
                         <th
                           key={headerKey}
@@ -860,7 +1006,6 @@ const DashboardPage = () => {
                       );
                     }
 
-                    // --- ברירת מחדל: כותרת רגילה לכל השאר ---
                     return (
                       <th
                         key={headerKey}
@@ -919,6 +1064,24 @@ const DashboardPage = () => {
                           />
                         ) : inv.total_amount != null ? (
                           inv.total_amount.toFixed(2)
+                        ) : (
+                          '—'
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {isEditing ? (
+                          <Input
+                            type="number"
+                            value={editValues.subtotal_amount}
+                            onChange={(e) =>
+                              setEditValues((v) => ({
+                                ...v,
+                                subtotal_amount: parseFloat(e.target.value),
+                              }))
+                            }
+                          />
+                        ) : inv.subtotal_amount != null ? (
+                          inv.subtotal_amount.toFixed(2)
                         ) : (
                           '—'
                         )}
@@ -990,14 +1153,14 @@ const DashboardPage = () => {
                             size="sm"
                             onClick={() => download(inv.filename)}
                           >
-                            <CloudDownload />
+                            {' '}
+                            <CloudDownload />{' '}
                           </Button>
                           {userPermissions.editInvoices && !isEditing && (
                             <Button variant="secondary" size="sm" onClick={() => startEdit(inv)}>
                               {t('edit')}
                             </Button>
                           )}
-
                           {userPermissions.editInvoices && missing && !isEditing && (
                             <Button
                               variant="secondary"
@@ -1027,10 +1190,10 @@ const DashboardPage = () => {
                           )}
                           {userPermissions.deleteInvoices && !isEditing && (
                             <Button variant="danger" size="sm" onClick={() => handleDelete(inv.id)}>
-                              <Trash2 size={16} />
+                              {' '}
+                              <Trash2 size={16} />{' '}
                             </Button>
                           )}
-
                           {userPermissions.undoInvoice && inv.confirmed && !isEditing && (
                             <Button
                               variant="secondary"

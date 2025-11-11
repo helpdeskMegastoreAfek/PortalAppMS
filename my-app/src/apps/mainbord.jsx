@@ -10,6 +10,7 @@ import {
   File,
   Camera,
   Code,
+  RefreshCcw,
 } from 'lucide-react';
 
 export default function EmployeePortal() {
@@ -52,10 +53,10 @@ export default function EmployeePortal() {
       accent: 'border-l-green-400',
     },
     {
-      title: 'Service',
+      title: 'Statistics',
       description: 'Submit and track service requests',
       icon: <Wrench className="w-6 h-6" />,
-      link: '/service',
+      link: '/statistics',
       accent: 'border-l-purple-400',
     },
     {
@@ -71,6 +72,20 @@ export default function EmployeePortal() {
       icon: <Camera className="w-6 h-6" />,
       link: '/invoiceUploader',
       accent: 'border-l-lime-400',
+    },
+    {
+      title: 'Data Sync WMS',
+      description: '',
+      icon: <RefreshCcw className="w-6 h-6" />,
+      link: '/AdminBoxInventoryNew',
+      accent: 'border-l-emerald-400',
+    },
+    {
+      title: 'Box & Cooler Inventory Test',
+      description: 'Test',
+      icon: <Code className="w-6 h-6" />,
+      link: '/BoxInventoryNew',
+      accent: 'border-l-emerald-400',
     },
     {
       title: 'Developer',

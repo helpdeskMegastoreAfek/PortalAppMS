@@ -53,6 +53,21 @@ app.use("/api/cities", citiesRoutes);
 const logsRoutes = require('./routes/logs')
 app.use("/api/logs", logsRoutes)
 
+const brokenBoxesRoute = require('./routes/brokenBoxes');
+app.use('/api/broken-boxes', brokenBoxesRoute);
+
+const assetRoutes = require('./routes/asset.routes');
+app.use('/api/assets', assetRoutes);
+
+const inventoryRoutesNew = require("./routes/inventory.routes");
+app.use("/api/inventoryNew", inventoryRoutesNew);
+
+const quantitativeRoutes = require('./routes/quantitative.routes');
+app.use('/api/quantitatives', quantitativeRoutes);
+
+const syncRoutes = require('./routes/sync.routes.js');
+app.use('/api/sync', syncRoutes); 
+
 const httpsOptions = {
   key: fs.readFileSync('../my-app/172.20.0.49-key.pem'), 
   cert: fs.readFileSync('../my-app/172.20.0.49.pem')

@@ -15,6 +15,10 @@ const invoiceSchema = new mongoose.Schema({
         type: Number,
         required: true
     },
+    subtotal_amount: {
+        type: Number,
+        default: 0
+    },
      delivery_fee: {
         type: Number,
         default: 0

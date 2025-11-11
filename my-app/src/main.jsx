@@ -13,10 +13,11 @@ import Login from './pages/Login';
 import AdminPanel from './apps/AdminPanel';
 import AdminBoxInventory from './apps/AdminBoxInventory';
 import Invoice from './apps/Invoice';
-// import AdminMealOrdering from "./apps/AdminMealOrdering";
 import InvoiceUploader from './components/InvoiceUploader';
 import Developer from './apps/developer';
-// import ServicePage from './apps/Service';
+import DataSyncPage from './apps/DataSyncPage';
+import BoxInventoryNew from './apps/BoxInventoryNew';
+// import Statistics from './apps/Statistics';
 import './index.css';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
@@ -34,8 +35,10 @@ ReactDOM.createRoot(document.getElementById('root')).render(
           <Route path="/invoice" element={<Invoice />} />
           {/* <Route path="/adminMeal" element={<AdminMealOrdering />} /> */}
           <Route path="/invoiceUploader" element={<InvoiceUploader />} />
+          <Route path="/AdminBoxInventoryNew" element={<DataSyncPage />} />
+          <Route path="/BoxInventoryNew" element={<BoxInventoryNew />} />
           <Route path="/developer" element={<Developer />} />
-          {/* <Route path='/service' element={<ServicePage/>}/> */}
+          {/* <Route path="/statistics" element={<Developer />} /> */}
         </Routes>
       </BrowserRouter>
     </LocalizationProvider>

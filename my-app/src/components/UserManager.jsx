@@ -364,9 +364,11 @@ export default function UsersTable({ refreshTrigger, appOptions }) {
       </div>
 
       {/* Edit Modal */}
+      {/* Edit Modal */}
       {editingUser && (
         <div className="fixed inset-0 backdrop-blur-xs bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg transform transition-all">
+          {/* --- CHANGE 1: Added flex, flex-col, and max-h-[90vh] to control height --- */}
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg transform transition-all flex flex-col max-h-[90vh]">
             <div className="px-6 py-4 border-b border-gray-200">
               <h2 className="text-xl font-semibold text-gray-900">
                 Edit User: {editingUser.username}
@@ -374,148 +376,136 @@ export default function UsersTable({ refreshTrigger, appOptions }) {
               <p className="text-sm text-gray-600 mt-1">Update user information and permissions</p>
             </div>
 
-            <div className="px-6 py-6 space-y-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">User Name</label>
-              <div>
-                <input
-                  type="text"
-                  value={editedData.username}
-                  onChange={(e) => setEditedData({ ...editedData, username: e.target.value })}
-                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                  placeholder="Enter user name"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Email Address
-                </label>
-                <input
-                  type="email"
-                  value={editedData.email ?? ''}
-                  onChange={(e) => setEditedData({ ...editedData, email: e.target.value })}
-                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                  placeholder="Enter email address"
-                />
-              </div>
-
-              {/* <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  New Password
-                </label>
-                <input
-                  type="password"
-                  value={editedData.password ?? ""}
-                  onChange={(e) =>
-                    setEditedData({ ...editedData, password: e.target.value })
-                  }
-                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                  placeholder="Enter new password"
-                />
-              </div> */}
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
-                <select
-                  value={editedData.status}
-                  onChange={(e) => setEditedData({ ...editedData, status: e.target.value })}
-                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-colors"
-                >
-                  <option value="Active">Active</option>
-                  <option value="Disable">Disabled</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Organization Unit
-                </label>
-                <input
-                  type="text"
-                  value={editedData.orgUnit ?? ''}
-                  onChange={(e) => setEditedData({ ...editedData, orgUnit: e.target.value })}
-                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                  placeholder="Enter organization unit"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Role</label>
-                <select
-                  value={editedData.role}
-                  onChange={(e) => setEditedData({ ...editedData, role: e.target.value })}
-                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-colors"
-                >
-                  <option value="user">User</option>
-                  <option value="admin">Admin</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="ml-6 mb-3">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Allowed Applications
-              </label>
-              <div className="pr-8">
-                {appOptions.map((app) => (
-                  <FormGroup key={app.value}>
-                    <PermissionSwitch
-                      type="checkbox"
-                      checked={editedData.allowedApps?.includes(app.value)}
-                      onChange={() => {
-                        const updatedApps = editedData.allowedApps?.includes(app.value)
-                          ? editedData.allowedApps.filter((v) => v !== app.value)
-                          : [...(editedData.allowedApps || []), app.value];
-
-                        setEditedData({
-                          ...editedData,
-                          allowedApps: updatedApps,
-                        });
-                      }}
-                      label={app.label}
-                    ></PermissionSwitch>
-                  </FormGroup>
-                ))}
-              </div>
-              {/* Invoice Panel Permissions */}
-              {editedData.allowedApps?.includes('/invoice') && (
-                <div className="pl-4 pr-8 pt-6 border-t border-gray-200">
-                  <h3 className="text-medium font-medium text-gray-800 mb-3">
-                    Invoice Panel Permissions
-                  </h3>
-                  <FormGroup className="space-y-2">
-                    <PermissionSwitch
-                      name="viewFinancials"
-                      checked={permissions.viewFinancials}
-                      onChange={handlePermissionChange}
-                      label="View financial summary"
-                    ></PermissionSwitch>
-                    <PermissionSwitch
-                      name="editInvoices"
-                      checked={permissions.editInvoices}
-                      onChange={handlePermissionChange}
-                      label="Edit invoices"
-                    ></PermissionSwitch>
-                    <PermissionSwitch
-                      name="undoInvoice"
-                      checked={permissions.undoInvoice}
-                      onChange={handlePermissionChange}
-                      label="Undo"
-                    ></PermissionSwitch>
-                    <PermissionSwitch
-                      name="csvExport"
-                      checked={permissions.csvExport}
-                      onChange={handlePermissionChange}
-                      label="Export CSV"
-                    ></PermissionSwitch>
-                    <PermissionSwitch
-                      name="deleteInvoices"
-                      checked={permissions.deleteInvoices}
-                      onChange={handlePermissionChange}
-                      label="Delete invoices (Only Developers)"
-                    ></PermissionSwitch>
-                  </FormGroup>
+            {/* --- CHANGE 2: Added a new wrapper div with flex-1 and overflow-y-auto for scrolling --- */}
+            <div className="flex-1 overflow-y-auto">
+              <div className="px-6 py-6 space-y-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">User Name</label>
+                <div>
+                  <input
+                    type="text"
+                    value={editedData.username}
+                    onChange={(e) => setEditedData({ ...editedData, username: e.target.value })}
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    placeholder="Enter user name"
+                  />
                 </div>
-              )}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Email Address
+                  </label>
+                  <input
+                    type="email"
+                    value={editedData.email ?? ''}
+                    onChange={(e) => setEditedData({ ...editedData, email: e.target.value })}
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    placeholder="Enter email address"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                  <select
+                    value={editedData.status}
+                    onChange={(e) => setEditedData({ ...editedData, status: e.target.value })}
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-colors"
+                  >
+                    <option value="Active">Active</option>
+                    <option value="Disable">Disabled</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Organization Unit
+                  </label>
+                  <input
+                    type="text"
+                    value={editedData.orgUnit ?? ''}
+                    onChange={(e) => setEditedData({ ...editedData, orgUnit: e.target.value })}
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    placeholder="Enter organization unit"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Role</label>
+                  <select
+                    value={editedData.role}
+                    onChange={(e) => setEditedData({ ...editedData, role: e.target.value })}
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-colors"
+                  >
+                    <option value="user">User</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="ml-6 mb-3">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Allowed Applications
+                </label>
+                <div className="pr-8">
+                  {appOptions.map((app) => (
+                    <FormGroup key={app.value}>
+                      <PermissionSwitch
+                        type="checkbox"
+                        checked={editedData.allowedApps?.includes(app.value)}
+                        onChange={() => {
+                          const updatedApps = editedData.allowedApps?.includes(app.value)
+                            ? editedData.allowedApps.filter((v) => v !== app.value)
+                            : [...(editedData.allowedApps || []), app.value];
+
+                          setEditedData({
+                            ...editedData,
+                            allowedApps: updatedApps,
+                          });
+                        }}
+                        label={app.label}
+                      ></PermissionSwitch>
+                    </FormGroup>
+                  ))}
+                </div>
+                {/* Invoice Panel Permissions */}
+                {editedData.allowedApps?.includes('/invoice') && (
+                  <div className="pl-4 pr-8 pt-6 border-t border-gray-200">
+                    <h3 className="text-medium font-medium text-gray-800 mb-3">
+                      Invoice Panel Permissions
+                    </h3>
+                    <FormGroup className="space-y-2">
+                      <PermissionSwitch
+                        name="viewFinancials"
+                        checked={permissions.viewFinancials}
+                        onChange={handlePermissionChange}
+                        label="View financial summary"
+                      ></PermissionSwitch>
+                      <PermissionSwitch
+                        name="editInvoices"
+                        checked={permissions.editInvoices}
+                        onChange={handlePermissionChange}
+                        label="Edit invoices"
+                      ></PermissionSwitch>
+                      <PermissionSwitch
+                        name="undoInvoice"
+                        checked={permissions.undoInvoice}
+                        onChange={handlePermissionChange}
+                        label="Undo"
+                      ></PermissionSwitch>
+                      <PermissionSwitch
+                        name="csvExport"
+                        checked={permissions.csvExport}
+                        onChange={handlePermissionChange}
+                        label="Export CSV"
+                      ></PermissionSwitch>
+                      <PermissionSwitch
+                        name="deleteInvoices"
+                        checked={permissions.deleteInvoices}
+                        onChange={handlePermissionChange}
+                        label="Delete invoices (Only Developers)"
+                      ></PermissionSwitch>
+                    </FormGroup>
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 rounded-b-xl flex justify-end space-x-3">

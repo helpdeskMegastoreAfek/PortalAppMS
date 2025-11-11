@@ -15,6 +15,10 @@ const inventorySchema = new mongoose.Schema({
     enum: ['incoming', 'outgoing'],
     required: true 
   },
+  manuallyReconciledBarcodes: {
+  type: [String],
+  default: []
+},
   scannedBarcodes: {
     type: [String],
     default: [] 
