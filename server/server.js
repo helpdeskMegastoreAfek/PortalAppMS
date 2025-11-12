@@ -4,12 +4,12 @@ const dotenv = require("dotenv");
 const cors = require("cors");
 const https = require('https');
 const fs = require('fs');
+const path = require('path');
 
 
 
 dotenv.config();
 const app = express();
-
 
 const corsOptions = {
   origin: [
@@ -67,6 +67,11 @@ app.use('/api/quantitatives', quantitativeRoutes);
 
 const syncRoutes = require('./routes/sync.routes.js');
 app.use('/api/sync', syncRoutes); 
+
+app.use(express.static(path.join(__dirname, 'public/dist')));
+app.get(/.*/, (req, res) => {
+  res.sendFile(path.join(__dirname, 'public/dist', 'index.html'));
+});
 
 const httpsOptions = {
   key: fs.readFileSync('../my-app/172.20.0.49-key.pem'), 
