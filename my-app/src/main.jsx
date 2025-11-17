@@ -17,7 +17,7 @@ import InvoiceUploader from './components/InvoiceUploader';
 import Developer from './apps/developer';
 import DataSyncPage from './apps/DataSyncPage';
 import BoxInventoryNew from './apps/BoxInventoryNew';
-// import Statistics from './apps/Statistics';
+import Statistics from './apps/Statistics';
 import './index.css';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
@@ -38,7 +38,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
           <Route path="/AdminBoxInventoryNew" element={<DataSyncPage />} />
           <Route path="/BoxInventoryNew" element={<BoxInventoryNew />} />
           <Route path="/developer" element={<Developer />} />
-          {/* <Route path="/statistics" element={<Developer />} /> */}
+          <Route path="/statistics" element={<Statistics />} />
         </Routes>
       </BrowserRouter>
     </LocalizationProvider>

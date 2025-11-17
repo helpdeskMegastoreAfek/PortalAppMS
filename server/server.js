@@ -68,10 +68,13 @@ app.use('/api/quantitatives', quantitativeRoutes);
 const syncRoutes = require('./routes/sync.routes.js');
 app.use('/api/sync', syncRoutes); 
 
-app.use(express.static(path.join(__dirname, 'public/dist')));
-app.get(/.*/, (req, res) => {
-  res.sendFile(path.join(__dirname, 'public/dist', 'index.html'));
-});
+const statisticsRouter = require('./routes/statistics.js'); 
+app.use('/api/statistics', statisticsRouter);
+
+// app.use(express.static(path.join(__dirname, 'public/dist')));
+// app.get(/.*/, (req, res) => {
+//   res.sendFile(path.join(__dirname, 'public/dist', 'index.html'));
+// });
 
 const httpsOptions = {
   key: fs.readFileSync('../my-app/172.20.0.49-key.pem'), 

@@ -43,20 +43,32 @@ const exportStyledExcelReport = (data, fileName) => {
 
   // שלב 1: הגדרת כותרות וסגנונות
   const headers = [
-    "תאריך", "שם נהג", "כמות שיצאו", "מספרי קופסאות",
-    "צידניות שיצאו", "צידניות שחזרו", "קרח שיצא", "קרח שחזר"
+    'תאריך',
+    'שם נהג',
+    'כמות שיצאו',
+    'מספרי קופסאות',
+    'צידניות שיצאו',
+    'צידניות שחזרו',
+    'קרח שיצא',
+    'קרח שחזר',
   ];
 
   const headerStyle = {
-    fill: { fgColor: { rgb: "FFFFFF00" } }, // צהוב
+    fill: { fgColor: { rgb: 'FFFFFF00' } }, // צהוב
     font: { bold: true },
-    alignment: { horizontal: "center", vertical: "center" }
+    alignment: { horizontal: 'center', vertical: 'center' },
   };
 
   // שלב 2: הכנת הנתונים לגיליון
-  const dataForSheet = data.map(row => [
-    row['תאריך'], row['שם נהג'], row['כמות שיצאו'], row['מספרי קופסאות'],
-    row['צידניות שיצאו'], row['צידניות שחזרו'], row['קרח שיצא'], row['קרח שחזר']
+  const dataForSheet = data.map((row) => [
+    row['תאריך'],
+    row['שם נהג'],
+    row['כמות שיצאו'],
+    row['מספרי קופסאות'],
+    row['צידניות שיצאו'],
+    row['צידניות שחזרו'],
+    row['קרח שיצא'],
+    row['קרח שחזר'],
   ]);
 
   const finalSheetData = [headers, ...dataForSheet];
@@ -75,15 +87,34 @@ const exportStyledExcelReport = (data, fileName) => {
   const coolerBalanceLabel = coolerBalance >= 0 ? 'עודף:' : 'חוסר:';
   const iceBalanceLabel = iceBalance >= 0 ? 'עודף:' : 'חוסר:';
   // הצגת הערך המוחלט (ללא מינוס)
-  const displayCoolerBalance = Math.abs(coolerBalance); 
+  const displayCoolerBalance = Math.abs(coolerBalance);
   const displayIceBalance = Math.abs(iceBalance);
 
   // הוספת שורות ריקות ושורות סיכום
   finalSheetData.push([]); // שורה ריקה
-  finalSheetData.push(['','', totalBoxesOut, 'סה"כ: ', totalCoolersOut, totalCoolersIn, totalIceOut, totalIceIn , 'סה"כ: ']);
+  finalSheetData.push([
+    '',
+    '',
+    totalBoxesOut,
+    'סה"כ: ',
+    totalCoolersOut,
+    totalCoolersIn,
+    totalIceOut,
+    totalIceIn,
+    'סה"כ: ',
+  ]);
   finalSheetData.push([]); // שורה ריקה
   // שימוש בתוויות ובערכים הדינמיים שיצרנו
-  finalSheetData.push(['','','','', displayCoolerBalance,coolerBalanceLabel, displayIceBalance,iceBalanceLabel]);
+  finalSheetData.push([
+    '',
+    '',
+    '',
+    '',
+    displayCoolerBalance,
+    coolerBalanceLabel,
+    displayIceBalance,
+    iceBalanceLabel,
+  ]);
 
   // שלב 4: יצירת הגיליון והחלת עיצובים
   const ws = XLSX.utils.aoa_to_sheet(finalSheetData);
@@ -92,16 +123,22 @@ const exportStyledExcelReport = (data, fileName) => {
     const cellAddress = XLSX.utils.encode_cell({ r: 0, c: colIndex });
     if (ws[cellAddress]) ws[cellAddress].s = headerStyle;
   });
-  
+
   const summaryRow1Index = data.length + 2;
   const summaryRow2Index = data.length + 4;
-  ws[XLSX.utils.encode_cell({r: summaryRow1Index, c: 1})].s = headerStyle; // סה"כ
-  ws[XLSX.utils.encode_cell({r: summaryRow2Index, c: 4})].s = headerStyle; // תווית עודף/חוסר צידניות
-  ws[XLSX.utils.encode_cell({r: summaryRow2Index, c: 6})].s = headerStyle; // תווית עודף/חוסר קרח
+  ws[XLSX.utils.encode_cell({ r: summaryRow1Index, c: 1 })].s = headerStyle; // סה"כ
+  ws[XLSX.utils.encode_cell({ r: summaryRow2Index, c: 4 })].s = headerStyle; // תווית עודף/חוסר צידניות
+  ws[XLSX.utils.encode_cell({ r: summaryRow2Index, c: 6 })].s = headerStyle; // תווית עודף/חוסר קרח
 
   ws['!cols'] = [
-    { wch: 12 }, { wch: 15 }, { wch: 12 }, { wch: 50 },
-    { wch: 15 }, { wch: 15 }, { wch: 12 }, { wch: 12 }
+    { wch: 12 },
+    { wch: 15 },
+    { wch: 12 },
+    { wch: 50 },
+    { wch: 15 },
+    { wch: 15 },
+    { wch: 12 },
+    { wch: 12 },
   ];
   ws['!props'] = { rtl: true };
 
@@ -1237,7 +1274,7 @@ export default function AdminBoxInventoryNew() {
     fetchAllData();
   }, [fetchAllData]);
 
-// --- CORRECTED LOGIC: Function to handle the custom report generation ---
+  // --- CORRECTED LOGIC: Function to handle the custom report generation ---
   const handleGenerateCustomReport = (startDate, endDate) => {
     const start = new Date(startDate);
     start.setHours(0, 0, 0, 0);
@@ -1253,7 +1290,7 @@ export default function AdminBoxInventoryNew() {
           const dateStr = moveDate.toISOString().split('T')[0];
           const driver = move.driverName || 'Unknown Driver';
           const key = `${driver}|${dateStr}`;
-          
+
           if (!driverDaySummary.has(key)) {
             driverDaySummary.set(key, {
               date: dateStr,
@@ -1265,7 +1302,7 @@ export default function AdminBoxInventoryNew() {
               smallCoolersIn: 0,
             });
           }
-          
+
           const summary = driverDaySummary.get(key);
           if (move.transactionType === 'outgoing') {
             summary.largeCoolersOut += move.largeCoolers;
@@ -1282,40 +1319,41 @@ export default function AdminBoxInventoryNew() {
       const dispatchTimestamp = asset.currentLocation?.dispatchedAt || asset.updatedAt;
 
       if (asset.status === 'On Mission' && dispatchTimestamp) {
-          const dispatchTime = new Date(dispatchTimestamp);
-          
-          if (!isNaN(dispatchTime) && dispatchTime >= start && dispatchTime <= end) {
-              const dateStr = dispatchTime.toISOString().split('T')[0];
-              const driver = asset.currentLocation.actualDriverName || 'Unknown Driver';
-              const key = `${driver}|${dateStr}`;
+        const dispatchTime = new Date(dispatchTimestamp);
 
-              if (!driverDaySummary.has(key)) {
-                   driverDaySummary.set(key, {
-                      date: dateStr,
-                      driverName: driver,
-                      barcodes: [],
-                      largeCoolersOut: 0,
-                      largeCoolersIn: 0,
-                      smallCoolersOut: 0,
-                      smallCoolersIn: 0,
-                  });
-              }
-              
-              const summary = driverDaySummary.get(key);
-              summary.barcodes.push(asset.barcode);
+        if (!isNaN(dispatchTime) && dispatchTime >= start && dispatchTime <= end) {
+          const dateStr = dispatchTime.toISOString().split('T')[0];
+          const driver = asset.currentLocation.actualDriverName || 'Unknown Driver';
+          const key = `${driver}|${dateStr}`;
+
+          if (!driverDaySummary.has(key)) {
+            driverDaySummary.set(key, {
+              date: dateStr,
+              driverName: driver,
+              barcodes: [],
+              largeCoolersOut: 0,
+              largeCoolersIn: 0,
+              smallCoolersOut: 0,
+              smallCoolersIn: 0,
+            });
           }
+
+          const summary = driverDaySummary.get(key);
+          summary.barcodes.push(asset.barcode);
+        }
       }
     });
-    
+
     // --- תוספת: הוספת 4 יחידות קרח לכל צידנית שיוצאת ---
     driverDaySummary.forEach((summary) => {
-        // נוסיף את הקרח המחושב לכמות הקרח שכבר נרשמה ידנית
-        summary.smallCoolersOut += (summary.largeCoolersOut * 4);
+      // נוסיף את הקרח המחושב לכמות הקרח שכבר נרשמה ידנית
+      summary.smallCoolersOut += summary.largeCoolersOut * 4;
     });
 
     // --- מיפוי הנתונים לעברית עם מבנה מדויק ---
-    const reportData = Array.from(driverDaySummary.values()).map(summary => ({
-        'תאריך': summary.date,
+    const reportData = Array.from(driverDaySummary.values())
+      .map((summary) => ({
+        תאריך: summary.date,
         'שם נהג': summary.driverName,
         'כמות שיצאו': summary.barcodes.length,
         'מספרי קופסאות': summary.barcodes.join(', '),
@@ -1323,12 +1361,15 @@ export default function AdminBoxInventoryNew() {
         'צידניות שחזרו': summary.largeCoolersIn,
         'קרח שיצא': summary.smallCoolersOut,
         'קרח שחזר': summary.smallCoolersIn,
-    })).sort((a,b) => new Date(b['תאריך']) - new Date(a['תאריך']) || a['שם נהג'].localeCompare(b['שם נהג']));
-
+      }))
+      .sort(
+        (a, b) =>
+          new Date(b['תאריך']) - new Date(a['תאריך']) || a['שם נהג'].localeCompare(b['שם נהג'])
+      );
 
     if (reportData.length === 0) {
-        toast.error('לא נמצאו נתונים עבור טווח התאריכים שנבחר.');
-        return;
+      toast.error('לא נמצאו נתונים עבור טווח התאריכים שנבחר.');
+      return;
     }
 
     // קריאה לפונקציית הייצוא המעוצבת

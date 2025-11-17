@@ -11,6 +11,7 @@ import {
   Camera,
   Code,
   RefreshCcw,
+  ChartNoAxesCombined
 } from 'lucide-react';
 
 export default function EmployeePortal() {
@@ -55,7 +56,7 @@ export default function EmployeePortal() {
     {
       title: 'Statistics',
       description: 'Submit and track service requests',
-      icon: <Wrench className="w-6 h-6" />,
+      icon: <ChartNoAxesCombined className="w-6 h-6" />,
       link: '/statistics',
       accent: 'border-l-purple-400',
     },

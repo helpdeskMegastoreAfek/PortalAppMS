@@ -1,9 +1,9 @@
-// models/PickingStats.js
+// server/models/PickingStats.js
 const mongoose = require('mongoose');
 
 const pickingStatsSchema = new mongoose.Schema({
     date: { type: Date, required: true },
-    ownerName: { type: String, required: true },
+    ownerName: { type: String },
     orderNumber: { type: String, required: true },
     waveNumber: { type: String },
     skuCode: { type: String, required: true },
@@ -12,14 +12,12 @@ const pickingStatsSchema = new mongoose.Schema({
     container: { type: String },
     quantity: { type: Number, required: true },
     workstation: { type: String },
+    shippingBox: { type: String },
     temperatureZone: { type: String },
-    picker: { type: String, required: true },
+    picker: { type: String }, 
     unloadingDock: { type: String },
     orderSequenceNumber: { type: String },
     orderReleaseTime: { type: Date },
-    stagingCompletionTime: { type: Date }
 });
 
-const PickingStats = mongoose.model('PickingStats', pickingStatsSchema);
-
-module.exports = PickingStats;
+module.exports = mongoose.model('PickingStats', pickingStatsSchema);

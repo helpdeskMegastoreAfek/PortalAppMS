@@ -16,6 +16,7 @@ import {
   Camera,
   Code,
   RefreshCcw,
+  ChartNoAxesCombined
 } from 'lucide-react';
 
 const appLinks = [
@@ -32,7 +33,7 @@ const appLinks = [
     icon: <PackageOpen size={20} />,
   },
   { label: 'IT Support Tickets', path: '/it', icon: <Laptop2 size={20} /> },
-  { label: 'Statistics', path: '/statistics', icon: <Wrench size={20} /> },
+  { label: 'Statistics', path: '/statistics', icon: <ChartNoAxesCombined size={20} /> },
   { label: 'Invoices', path: '/invoice', icon: <File size={20} /> },
   {
     label: 'Scanner',
