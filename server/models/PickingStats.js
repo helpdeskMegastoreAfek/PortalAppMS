@@ -19,5 +19,5 @@ const pickingStatsSchema = new mongoose.Schema({
     orderSequenceNumber: { type: String },
     orderReleaseTime: { type: Date },
 });
-
+pickingStatsSchema.index({ date: 1 }); 
 module.exports = mongoose.model('PickingStats', pickingStatsSchema);
