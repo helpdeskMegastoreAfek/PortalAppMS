@@ -49,15 +49,15 @@ const pickingHeadCells = [
 
 const PickingStats = () => {
     // --- State לנתונים ---
-    const [allStats, setAllStats] = useState([]); // כל הנתונים הגולמיים מהשרת
+    const [allStats, setAllStats] = useState([]); 
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
-    // --- State לפילטרים (תאריכים - קובע מה נטען/מוצג ברמה הגלובלית) ---
+    // --- State לפילטרים (תאריכים) ---
     const [startDate, setStartDate] = useState(new Date());
     const [endDate, setEndDate] = useState(new Date());
 
-    // --- State לפילטרים (מקומיים - משפיע על הטבלה וה-KPI) ---
+    // --- State לפילטרים (מקומיים) ---
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedPickingType, setSelectedPickingType] = useState('all');
     const [selectedWorkstationType, setSelectedWorkstationType] = useState('all');
@@ -74,15 +74,15 @@ const PickingStats = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [modalContent, setModalContent] = useState({ type: '', message: '' });
 
-    // צבעים לתרשים עוגה (קבועים מראש לפי סוג עמדה)
     const WORKSTATION_COLORS = {
-        'קירור': '#3b82f6', // blue-500
-        'יבש': '#f97316',   // orange-500
-        'AGV': '#16a34a',   // green-600
-        'אחר': '#64748b',   // slate-500
-        'לא משויך': '#d1d5db' // gray-300
+        'קירור': '#3b82f6', 
+        'יבש': '#f97316',   
+        'AGV': '#16a34a',   
+        'אחר': '#64748b',   
+        'לא משויך': '#d1d5db' 
     };
 
+    // --- 1. טעינת נתונים ---
     const fetchStats = useCallback(async () => {
         setLoading(true);
         setError(null);
@@ -99,14 +99,11 @@ const PickingStats = () => {
         }
     }, []);
 
-    // טעינה ראשונית
     useEffect(() => {
         fetchStats();
     }, [fetchStats]);
 
-
-    // --- 2. סינון לפי תאריכים (Global Filter) ---
-    // זה יוצר את "מאגר הנתונים הפעיל" לטווח התאריכים שנבחר
+    // --- 2. סינון לפי תאריכים ---
     const dateFilteredStats = useMemo(() => {
         if (!allStats.length) return [];
         const start = new Date(startDate); start.setHours(0,0,0,0);
@@ -118,20 +115,14 @@ const PickingStats = () => {
         });
     }, [allStats, startDate, endDate]);
 
-
-    // --- 3. סינון מקומי לטבלה (Table Filter) ---
+    // --- 3. סינון מקומי לטבלה ---
     const finalFilteredRows = useMemo(() => {
         return dateFilteredStats.filter(stat => {
-            // סינון סוג ליקוט
             if (selectedPickingType !== 'all' && getPickingType(stat.location) !== selectedPickingType) return false;
-            // סינון סוג עמדה
             if (selectedWorkstationType !== 'all' && getWorkstationType(stat.workstation) !== selectedWorkstationType) return false;
-            // סינון עמדה ספציפית
             if (selectedWorkstation !== 'all' && stat.workstation !== selectedWorkstation) return false;
-            // סינון מלקט
             if (selectedPicker !== 'all' && stat.picker !== selectedPicker) return false;
 
-            // חיפוש חופשי
             if (searchTerm) {
                 const term = searchTerm.toLowerCase();
                 const combined = `${stat.picker} ${stat.orderNumber} ${stat.shippingBox} ${stat.skuCode} ${stat.quantity} ${stat.workstation}`.toLowerCase();
@@ -141,10 +132,7 @@ const PickingStats = () => {
         });
     }, [dateFilteredStats, selectedPickingType, selectedWorkstationType, selectedWorkstation, selectedPicker, searchTerm]);
 
-
-    // --- 4. חישוב נתונים לגרפים (מבוסס על תאריכים בלבד - מציג הכל) ---
-    
-    // גרף עמודות - ביצועי מלקטים
+    // --- 4. חישוב גרפים ---
     const chartData = useMemo(() => {
         const pickerPerformance = dateFilteredStats.reduce((acc, curr) => {
             if (curr.picker) {
@@ -156,7 +144,6 @@ const PickingStats = () => {
         return Object.values(pickerPerformance).sort((a, b) => b['כמות מלוקטת'] - a['כמות מלוקטת']);
     }, [dateFilteredStats]);
 
-    // גרף עוגה - סוגי עמדות
     const workstationDistribution = useMemo(() => {
         if (!dateFilteredStats.length) return [];
         const distribution = dateFilteredStats.reduce((acc, stat) => {
@@ -168,12 +155,10 @@ const PickingStats = () => {
         return Object.values(distribution).filter(item => item.value > 0);
     }, [dateFilteredStats]);
 
-
-    // --- 5. חישוב KPI (מבוסס על הסינון המקומי - מציג מה שנבחר) ---
+    // --- 5. KPI ---
     const kpiData = useMemo(() => {
         const source = finalFilteredRows;
         if (!source.length) return { totalQuantity: 0, uniqueOrders: 0, uniquePickers: 0, orderLines: 0 };
-        
         const uniqueOrders = new Set(source.map(s => s.orderNumber)).size;
         return {
             totalQuantity: source.reduce((sum, item) => sum + item.quantity, 0),
@@ -183,9 +168,7 @@ const PickingStats = () => {
         };
     }, [finalFilteredRows]);
 
-
-    // --- 6. אפשרויות לפילטרים (Select Options) ---
-    // מחשב דינמית את האפשרויות על בסיס הנתונים הקיימים בטווח התאריכים
+    // --- 6. אפשרויות לפילטרים ---
     const uniqueOptions = useMemo(() => {
         const pickers = new Set();
         const wsTypes = new Set();
@@ -206,7 +189,6 @@ const PickingStats = () => {
         };
     }, [dateFilteredStats]);
 
-
     // --- 7. מיון ודפדוף ---
     const handleSortRequest = (property) => {
         const isAsc = orderBy === property && order === 'asc';
@@ -223,12 +205,38 @@ const PickingStats = () => {
         return sorted.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
     }, [finalFilteredRows, page, rowsPerPage, order, orderBy]);
 
+    // --- 8. פונקציית ייצוא לאקסל (החדשה) ---
+    const handleExportExcel = () => {
+        if (!finalFilteredRows.length) return;
 
-    // --- 8. סנכרון SQL ---
+        // הכנת הנתונים לאקסל (מיפוי לעברית)
+        const dataToExport = finalFilteredRows.map(row => ({
+            'תאריך': new Date(row.date).toLocaleDateString('he-IL'),
+            'שם מלקט': row.picker,
+            'מספר הזמנה': row.orderNumber,
+            'מק"ט': row.skuCode,
+            'כמות': row.quantity,
+            'ארגז שילוח': row.shippingBox,
+            'עמדת עבודה': row.workstation,
+            'סוג עמדה': getWorkstationType(row.workstation),
+            'סוג ליקוט': getPickingType(row.location)
+        }));
+
+        // יצירת הגיליון
+        const ws = XLSX.utils.json_to_sheet(dataToExport);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "נתוני ליקוט");
+
+        // שמירת הקובץ
+        const fileName = `Picking_Report_${new Date().toISOString().split('T')[0]}.xlsx`;
+        XLSX.writeFile(wb, fileName);
+    };
+
+    // --- 9. סנכרון SQL ---
     const handleRefreshSQL = async () => {
         setModalContent({ type: 'loading', message: 'מסנכרן נתונים מ-SQL, נא להמתין...' });
         try {
-            const refreshResponse = await fetch(`${API_URL}/api/statistics/refresh`, { // שים לב לנתיב
+            const refreshResponse = await fetch(`${API_URL}/api/statistics/refresh`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -242,7 +250,7 @@ const PickingStats = () => {
                 throw new Error(errorData.message);
             }
             
-            await fetchStats(); // טעינה מחדש
+            await fetchStats();
             setModalContent({ type: 'success', message: 'הסנכרון הושלם בהצלחה.' });
             setTimeout(() => setIsModalOpen(false), 2000);
 
@@ -253,102 +261,72 @@ const PickingStats = () => {
 
     const formatDateForInput = (d) => d.toISOString().split('T')[0];
 
-
     // ----------------- RENDER -----------------
     return (
         <div className="space-y-6 animate-fade-in">
-            
-            {/* --- כותרת וחיפוש תאריכים --- */}
+            {/* כותרת וחיפוש תאריכים */}
             <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
                 <div className="flex flex-col md:flex-row items-end gap-6 justify-center">
                     <div className="flex flex-col gap-2">
                         <label className="text-sm font-medium text-slate-600">מתאריך</label>
-                        <input 
-                            type="date" 
-                            value={formatDateForInput(startDate)} 
-                            onChange={(e) => setStartDate(new Date(e.target.value))} 
-                            className="border border-slate-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 outline-none transition-all" 
-                        />
+                        <input type="date" value={formatDateForInput(startDate)} onChange={(e) => setStartDate(new Date(e.target.value))} className="border border-slate-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 outline-none" />
                     </div>
                     <div className="flex flex-col gap-2">
                         <label className="text-sm font-medium text-slate-600">עד תאריך</label>
-                        <input 
-                            type="date" 
-                            value={formatDateForInput(endDate)} 
-                            onChange={(e) => setEndDate(new Date(e.target.value))} 
-                            className="border border-slate-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 outline-none transition-all" 
-                        />
+                        <input type="date" value={formatDateForInput(endDate)} onChange={(e) => setEndDate(new Date(e.target.value))} className="border border-slate-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 outline-none" />
                     </div>
-                    
                     <div className="flex gap-3">
-                         {/* כאן אין כפתור "חיפוש" כי הסינון מתבצע אוטומטית כשהתאריך משתנה במשתנה dateFilteredStats.
-                             אבל כדי לשמור על אחידות עיצובית, אפשר להשאיר כפתור שרק מרענן את הנתונים מהשרת. */}
-                        <button 
-                            onClick={fetchStats} 
-                            disabled={loading} 
-                            className="flex items-center gap-2 bg-indigo-600 text-white font-semibold py-2.5 px-6 rounded-lg hover:bg-indigo-700 disabled:bg-slate-300 shadow-md transition-all active:scale-95"
-                        >
-                            {loading ? <Spinner /> : <Search size={18} />}
-                            {loading ? 'טוען...' : 'טען נתונים'}
+                        <button onClick={fetchStats} disabled={loading} className="flex items-center gap-2 bg-indigo-600 text-white font-semibold py-2.5 px-6 rounded-lg hover:bg-indigo-700 disabled:bg-slate-300 shadow-md">
+                            {loading ? <Spinner /> : <Search size={18} />} {loading ? 'טוען...' : 'טען נתונים'}
+                        </button>
+                        <button onClick={() => {setModalContent({type:'confirm', message:'האם אתה בטוח שברצונך לסנכרן נתונים מ-SQL?'}); setIsModalOpen(true);}} disabled={loading} className="flex items-center gap-2 bg-white text-indigo-700 border border-indigo-200 font-semibold py-2.5 px-6 rounded-lg hover:bg-indigo-50 disabled:bg-slate-50">
+                            <RefreshCw size={18} /> סנכרון SQL
                         </button>
                         
+                        {/* כפתור ייצוא לאקסל החדש */}
                         <button 
-                            onClick={() => {setModalContent({type:'confirm', message:'האם אתה בטוח שברצונך לסנכרן נתונים מ-SQL?'}); setIsModalOpen(true);}} 
-                            disabled={loading} 
-                            className="flex items-center gap-2 bg-white text-indigo-700 border border-indigo-200 font-semibold py-2.5 px-6 rounded-lg hover:bg-indigo-50 disabled:bg-slate-50 transition-all active:scale-95"
+                            onClick={handleExportExcel} 
+                            disabled={loading || finalFilteredRows.length === 0} 
+                            className="flex items-center gap-2 bg-emerald-600 text-white font-semibold py-2.5 px-6 rounded-lg hover:bg-emerald-700 disabled:bg-slate-300 shadow-md"
                         >
-                            <RefreshCw size={18} /> סנכרון SQL
+                            <FileSpreadsheet size={18} /> ייצוא לאקסל
                         </button>
                     </div>
                 </div>
             </div>
 
-            {/* --- שורת פילטרים (Selects) --- */}
+            {/* פילטרים */}
             <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-100">
                 <div className="text-sm font-semibold text-slate-500 mb-3">סינון תוצאות (מקומי)</div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                      <div className="relative group">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={18} />
-                        <input 
-                            type="text" 
-                            placeholder="חיפוש חופשי..." 
-                            value={searchTerm} 
-                            onChange={(e) => setSearchTerm(e.target.value)} 
-                            className="w-full border border-slate-300 rounded-lg py-2.5 pl-10 pr-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all" 
-                        />
+                        <input type="text" placeholder="חיפוש חופשי..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full border border-slate-300 rounded-lg py-2.5 pl-10 pr-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" />
                     </div>
-                    <select value={selectedPickingType} onChange={(e) => { setSelectedPickingType(e.target.value); setPage(0); }} className="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer hover:border-indigo-300 transition-all">
+                    <select value={selectedPickingType} onChange={(e) => { setSelectedPickingType(e.target.value); setPage(0); }} className="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer">
                         <option value="all">כל סוגי ליקוט</option>
                         <option value="ליקוט ידני (M2G)">ליקוט ידני (M2G)</option>
                         <option value="ליקוט רגיל">ליקוט רגיל</option>
                     </select>
-                    <select value={selectedWorkstationType} onChange={(e) => { setSelectedWorkstationType(e.target.value); setPage(0); }} className="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer hover:border-indigo-300 transition-all">
+                    <select value={selectedWorkstationType} onChange={(e) => { setSelectedWorkstationType(e.target.value); setPage(0); }} className="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer">
                         <option value="all">כל סוגי עמדות</option>
                         {uniqueOptions.wsTypes.filter(t=>t!=='all').map(type => <option key={type} value={type}>{type}</option>)}
                     </select>
-                    <select value={selectedWorkstation} onChange={(e) => { setSelectedWorkstation(e.target.value); setPage(0); }} className="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer hover:border-indigo-300 transition-all">
+                    <select value={selectedWorkstation} onChange={(e) => { setSelectedWorkstation(e.target.value); setPage(0); }} className="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer">
                         <option value="all">כל עמדות עבודה</option>
                         {uniqueOptions.workstations.filter(ws=>ws!=='all').map(ws => <option key={ws} value={ws}>{ws}</option>)}
                     </select>
-                    <select value={selectedPicker} onChange={(e) => { setSelectedPicker(e.target.value); setPage(0); }} className="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer hover:border-indigo-300 transition-all">
+                    <select value={selectedPicker} onChange={(e) => { setSelectedPicker(e.target.value); setPage(0); }} className="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer">
                         <option value="all">כל המלקטים</option>
                         {uniqueOptions.pickers.filter(p=>p!=='all').map(picker => <option key={picker} value={picker}>{picker}</option>)}
                     </select>
                 </div>
             </div>
 
-            {/* --- שגיאות / טעינה --- */}
-            {error && (
-                <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-md flex items-center gap-3">
-                    <AlertTriangle className="text-red-500" />
-                    <span className="text-red-700 font-medium">{error}</span>
-                </div>
-            )}
+            {error && <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-md text-red-700 font-medium">{error}</div>}
 
-            {/* --- תוכן ראשי --- */}
             {dateFilteredStats.length > 0 ? (
                 <div className="space-y-8">
-                    
                     {/* KPI Cards */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                         <KpiCard title="סה״כ פריטים (מסונן)" value={kpiData.totalQuantity} icon={<Package className="text-white" />} color="bg-gradient-to-br from-indigo-500 to-indigo-600" />
@@ -357,13 +335,10 @@ const PickingStats = () => {
                         <KpiCard title="מלקטים פעילים" value={kpiData.uniquePickers} icon={<Users className="text-white" />} color="bg-gradient-to-br from-orange-500 to-orange-600" />
                     </div>
 
-                    {/* Charts Area */}
+                    {/* Charts */}
                     <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-                        {/* גרף עמודות */}
                         <div className="lg:col-span-3 bg-white p-6 rounded-xl shadow-sm border border-slate-100">
-                             <h2 className="text-lg font-bold text-slate-700 mb-6 flex items-center gap-2">
-                                <Users size={20} className="text-indigo-500"/> ביצועי מלקטים (כלל הטווח)
-                            </h2>
+                             <h2 className="text-lg font-bold text-slate-700 mb-6 flex items-center gap-2"><Users size={20} className="text-indigo-500"/> ביצועי מלקטים</h2>
                             <ResponsiveContainer width="100%" height={320}>
                                 <BarChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
@@ -375,11 +350,8 @@ const PickingStats = () => {
                                 </BarChart>
                             </ResponsiveContainer>
                         </div>
-                        {/* גרף עוגה */}
                         <div className="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-slate-100">
-                             <h2 className="text-lg font-bold text-slate-700 mb-6 flex items-center gap-2">
-                                <Package size={20} className="text-indigo-500"/> חלוקה לפי סוג עמדה
-                            </h2>
+                             <h2 className="text-lg font-bold text-slate-700 mb-6 flex items-center gap-2"><Package size={20} className="text-indigo-500"/> חלוקה לפי סוג עמדה</h2>
                             <ResponsiveContainer width="100%" height={320}>
                                 <PieChart>
                                     <Pie data={workstationDistribution} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} innerRadius={60} paddingAngle={2} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}>
@@ -392,19 +364,16 @@ const PickingStats = () => {
                         </div>
                     </div>
 
-                    {/* Table Area */}
+                    {/* Table */}
                     <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                          <div className="p-5 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
                             <div className="flex items-center gap-2">
                                 <ListOrdered className="text-slate-400" size={20}/>
                                 <h3 className="font-bold text-slate-700">פירוט ליקוטים</h3>
-                                <span className="text-xs font-normal text-slate-500 bg-slate-200 px-2 py-0.5 rounded-full">
-                                    {finalFilteredRows.length} שורות
-                                </span>
+                                <span className="text-xs font-normal text-slate-500 bg-slate-200 px-2 py-0.5 rounded-full">{finalFilteredRows.length} שורות</span>
                             </div>
                             {selectedPicker !== 'all' && <span className="text-xs bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full font-medium">מסנן מלקט: {selectedPicker}</span>}
                         </div>
-                        
                         <div className="overflow-x-auto">
                             <table className="w-full text-sm text-left text-slate-600">
                                 <thead className="text-xs uppercase bg-slate-50 text-slate-600 font-semibold tracking-wide">
@@ -431,18 +400,14 @@ const PickingStats = () => {
                                             <td className="px-6 py-4 text-slate-600">{row.workstation}</td>
                                         </tr>
                                     ))}
-                                    {paginatedRows.length === 0 && (
-                                         <tr><td colSpan={7} className="text-center py-10 text-slate-400">לא נמצאו רשומות</td></tr>
-                                    )}
+                                    {paginatedRows.length === 0 && <tr><td colSpan={7} className="text-center py-10 text-slate-400">לא נמצאו רשומות</td></tr>}
                                 </tbody>
                             </table>
                         </div>
-                        
-                        {/* Pagination */}
                         <div className="flex justify-between items-center p-4 bg-white border-t border-slate-100">
-                            <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={page === 0} className="px-4 py-2 text-sm border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-50 transition-all">הקודם</button>
+                            <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={page === 0} className="px-4 py-2 text-sm border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-50">הקודם</button>
                             <span className="text-sm font-medium text-slate-600">עמוד {page + 1} מתוך {Math.ceil(finalFilteredRows.length / rowsPerPage) || 1}</span>
-                            <button onClick={() => setPage(p => p + 1)} disabled={page >= Math.ceil(finalFilteredRows.length / rowsPerPage) - 1} className="px-4 py-2 text-sm border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-50 transition-all">הבא</button>
+                            <button onClick={() => setPage(p => p + 1)} disabled={page >= Math.ceil(finalFilteredRows.length / rowsPerPage) - 1} className="px-4 py-2 text-sm border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-50">הבא</button>
                         </div>
                     </div>
                 </div>
@@ -456,42 +421,12 @@ const PickingStats = () => {
                 )
             )}
 
-            {/* --- Modal --- */}
+            {/* Modal */}
             <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
-                {modalContent.type === 'confirm' && (
-                    <div className="text-center p-2">
-                         <div className="bg-indigo-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <RefreshCw className="text-indigo-600" size={32} />
-                        </div>
-                        <h3 className="text-xl font-bold text-slate-800 mb-2">אישור סנכרון</h3>
-                        <p className="text-slate-600 mb-6">{modalContent.message}</p>
-                        <div className="flex justify-center gap-3">
-                            <button onClick={() => setIsModalOpen(false)} className="px-5 py-2.5 bg-white border border-slate-300 text-slate-700 font-medium rounded-lg hover:bg-slate-50 transition-colors">ביטול</button>
-                            <button onClick={handleRefreshSQL} className="px-5 py-2.5 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition-colors shadow-sm">אשר</button>
-                        </div>
-                    </div>
-                )}
-                {modalContent.type === 'loading' && (
-                    <div className="text-center py-4">
-                        <Spinner large />
-                        <p className="mt-4 font-medium text-slate-700 animate-pulse">{modalContent.message}</p>
-                    </div>
-                )}
-                {modalContent.type === 'success' && (
-                     <div className="text-center py-2">
-                        <CheckCircle className="mx-auto text-green-500 mb-3" size={48} />
-                        <h3 className="text-lg font-bold text-slate-800">הצלחה!</h3>
-                        <p className="text-slate-600">{modalContent.message}</p>
-                    </div>
-                )}
-                {modalContent.type === 'error' && (
-                     <div className="text-center py-2">
-                        <AlertTriangle className="mx-auto text-red-500 mb-3" size={48} />
-                        <h3 className="text-lg font-bold text-slate-800">שגיאה</h3>
-                        <p className="text-slate-600 bg-red-50 p-3 rounded-lg mt-2 text-sm">{modalContent.message}</p>
-                         <button onClick={() => setIsModalOpen(false)} className="mt-4 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200">סגור</button>
-                    </div>
-                )}
+                {modalContent.type === 'confirm' && <div className="text-center p-2"><RefreshCw className="mx-auto text-indigo-600 mb-2" size={32}/><p>{modalContent.message}</p><div className="flex justify-center gap-2 mt-4"><button onClick={()=>setIsModalOpen(false)} className="border px-4 py-2 rounded">ביטול</button><button onClick={handleRefreshSQL} className="bg-indigo-600 text-white px-4 py-2 rounded">אשר</button></div></div>}
+                {modalContent.type === 'loading' && <div className="text-center"><Spinner large /><p>{modalContent.message}</p></div>}
+                {modalContent.type === 'success' && <div className="text-center"><CheckCircle className="mx-auto text-green-500" size={32}/><p>{modalContent.message}</p></div>}
+                {modalContent.type === 'error' && <div className="text-center"><AlertTriangle className="mx-auto text-red-500" size={32}/><p>{modalContent.message}</p><button onClick={()=>setIsModalOpen(false)} className="mt-2 bg-slate-100 px-3 py-1 rounded">סגור</button></div>}
             </Modal>
         </div>
     );
@@ -734,22 +669,109 @@ const InboundStats = () => {
     }, [allRows]);
 
     // --- Export Excel ---
+   // --- פונקציית ייצוא לאקסל (מתוקנת עם ספירת מק"טים לכל אזור) ---
+    // --- פונקציית ייצוא לאקסל (AGV ו-BULK לא נכנסים לסיכום הכמות) ---
     const handleExportExcel = () => {
         if (!filteredRows.length) return;
+
+        // 1. חישוב הנתונים לפי עובד (ללא שינוי)
         const summary = filteredRows.reduce((acc, row) => {
             const name = row.receiver || 'לא ידוע';
+            
+            const areaType = getMappedWorkArea(row);
+            const isWeight = WEIGHT_SKUS.has(String(row.skuCode)) || row.pricingType === 'weight';
+
             if (!acc[name]) {
-                acc[name] = { 'שם עובד': name, 'סה"כ כמות פריטים': 0, 'כמות שורות שקיל': 0, 'כמות שורות יחידות': 0, 'סה"כ שורות': 0, 'מספר הזמנות ייחודיות': new Set() };
+                acc[name] = {
+                    'שם עובד': name,
+                    'יחידות Inbound רגיל': 0,
+                    'מק"טים יחידות': 0,
+                    'כמות ב-M2G': 0,
+                    'מק"טים M2G': 0,
+                    'מק"טים AGV': 0,
+                    'מק"טים BULK': 0, 
+                    'מק"טים שקיל': 0,
+                    'מספר הזמנות ייחודיות': new Set()
+                };
             }
-            acc[name]['סה"כ כמות פריטים'] += row.quantity;
-            acc[name]['סה"כ שורות'] += 1;
+
             acc[name]['מספר הזמנות ייחודיות'].add(row.orderNumber);
-            if (WEIGHT_SKUS.has(String(row.skuCode))) acc[name]['כמות שורות שקיל'] += 1;
-            else acc[name]['כמות שורות יחידות'] += 1;
+
+            if (isWeight) {
+                acc[name]['מק"טים שקיל'] += 1;
+            } else {
+                acc[name]['מק"טים יחידות'] += 1;
+            }
+            
+            if (areaType === 'M2G הכנסת סחורה') {
+                acc[name]['כמות ב-M2G'] += row.quantity;
+                acc[name]['מק"טים M2G'] += 1;
+            } 
+            else if (areaType === 'איזור AGV') {
+                acc[name]['מק"טים AGV'] += 1; 
+            } 
+            else if (areaType === 'איזור BULK') { // שים לב: וודא שזה תואם לפונקציית העזר (אם היא מחזירה 'BULK' או 'איזור BULK')
+                acc[name]['מק"טים BULK'] += 1; 
+            } 
+            else {
+                acc[name]['יחידות Inbound רגיל'] += row.quantity;
+            }
+
             return acc;
         }, {});
-        const exportData = Object.values(summary).map(item => ({ ...item, 'מספר הזמנות ייחודיות': item['מספר הזמנות ייחודיות'].size }));
+
+        // 2. המרה למערך שטוח
+        const exportData = Object.values(summary).map(item => ({
+            ...item,
+            'מספר הזמנות ייחודיות': item['מספר הזמנות ייחודיות'].size
+        }));
+
+        // --- הוספת שורת סה"כ (החלק החדש) ---
+        
+        // יצירת אובייקט לסיכום
+        const totalRow = {
+            'שם עובד': 'סה"כ כללי',
+            'יחידות Inbound רגיל': 0,
+            'מק"טים יחידות': 0,
+            'כמות ב-M2G': 0,
+            'מק"טים M2G': 0,
+            'מק"טים AGV': 0,
+            'מק"טים BULK': 0,
+            'מק"טים שקיל': 0,
+            'מספר הזמנות ייחודיות': 0
+        };
+
+        // סכימת כל העמודות
+        exportData.forEach(row => {
+            totalRow['יחידות Inbound רגיל'] += row['יחידות Inbound רגיל'] || 0;
+            totalRow['מק"טים יחידות'] += row['מק"טים יחידות'] || 0;
+            totalRow['כמות ב-M2G'] += row['כמות ב-M2G'] || 0;
+            totalRow['מק"טים M2G'] += row['מק"טים M2G'] || 0;
+            totalRow['מק"טים AGV'] += row['מק"טים AGV'] || 0;
+            totalRow['מק"טים BULK'] += row['מק"טים BULK'] || 0;
+            totalRow['מק"טים שקיל'] += row['מק"טים שקיל'] || 0;
+            totalRow['מספר הזמנות ייחודיות'] += row['מספר הזמנות ייחודיות'] || 0;
+        });
+
+        // הוספת שורת הסיכום לסוף המערך
+        exportData.push(totalRow);
+
+        // ------------------------------------
+
+        // 3. יצירת האקסל
         const ws = XLSX.utils.json_to_sheet(exportData);
+        ws['!cols'] = [
+            {wch: 18}, // שם
+            {wch: 18}, // Inbound רגיל
+            {wch: 18}, // M2G כמות
+            {wch: 18}, // M2G מקט
+            {wch: 18}, // AGV מקט
+            {wch: 18}, // BULK מקט
+            {wch: 18}, // שקיל
+            {wch: 18}, // יחידות
+            {wch: 25}  // הזמנות
+        ];
+
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, "סיכום קליטה");
         XLSX.writeFile(wb, `Inbound_Summary_${new Date().toISOString().split('T')[0]}.xlsx`);
