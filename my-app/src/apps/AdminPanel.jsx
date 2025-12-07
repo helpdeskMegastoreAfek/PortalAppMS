@@ -52,6 +52,9 @@ export default function AdminPanel() {
     { label: 'Service Tickets', value: '/service' },
     { label: 'Admin Box Inventory', value: '/adminBox' },
     { label: 'Invoice Panel', value: '/invoice' },
+    { label: 'Statistics Panel', value: '/statistics' },
+    { label: 'Data Sync WMS Panel', value: '/AdminBoxInventoryNew' },
+    { label: 'Developer', value: '/developer' },
     { label: 'Admin Panel', value: '/admin' },
   ];
 

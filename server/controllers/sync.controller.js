@@ -31,9 +31,6 @@ const syncInvoicesToMongo = async (req, res) => {
         const operations = mysqlResults.map(doc => ({
             updateOne: {
                 filter: { so_no: doc.so_no },
-                // *** התיקון הקריטי נמצא כאן ***
-                // במקום $set שדורס תמיד, נשתמש ב-$setOnInsert
-                // שמעדכן את הנתונים רק בעת יצירת מסמך חדש.
                 update: { $setOnInsert: doc },
                 upsert: true
             }
