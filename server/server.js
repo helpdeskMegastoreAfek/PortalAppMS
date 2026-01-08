@@ -72,6 +72,12 @@ app.use('/api/sync', syncRoutes);
 const statisticsRouter = require('./routes/statistics.js'); 
 app.use('/api/statistics', statisticsRouter);
 
+const testRoutes = require('./routes/test.routes');
+app.use('/api/test', testRoutes);
+
+const dashboardRoutes = require('./routes/dashboard.routes');
+app.use('/api/dashboard', dashboardRoutes);
+
 // app.use(express.static(path.join(__dirname, 'public/dist')));
 // app.get(/.*/, (req, res) => {
 //   res.sendFile(path.join(__dirname, 'public/dist', 'index.html'));

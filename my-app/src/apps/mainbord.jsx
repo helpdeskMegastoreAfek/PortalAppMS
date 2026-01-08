@@ -47,10 +47,10 @@ export default function EmployeePortal() {
       accent: 'border-l-blue-400',
     },
     {
-      title: 'IT Support Tickets',
+      title: 'Dashboard Box and Waves',
       description: 'Submit and track IT support requests',
       icon: <Laptop2 className="w-6 h-6" />,
-      link: '/it',
+      link: '/Dashboard',
       accent: 'border-l-green-400',
     },
     {

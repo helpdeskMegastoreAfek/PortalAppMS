@@ -11,16 +11,28 @@ const syncInvoicesToMongo = async (req, res) => {
     }
 
     try {
-        // --- שלב 1: שליפת הנתונים מ-MySQL (ללא שינוי) ---
-        const sqlQuery = `
-            SELECT a.so_no, B.customer_city, B.wave_no, B.delivery_start_time
-            FROM doc_shipment_packages A
-            LEFT JOIN doc_so_master B ON A.so_no = B.so_no
-            WHERE a.create_at BETWEEN ? AND ?
-            GROUP BY a.so_no, B.customer_city, B.wave_no, B.delivery_start_time;
-        `;
         const endDateTime = `${endDate} 23:59:59`;
-        const params = [startDate, endDateTime];
+
+        // --- שלב 1: שליפת הנתונים מ-MySQL (רגיל + ארכיון) ---
+        const sqlQuery = `
+            (SELECT a.so_no, B.customer_city, B.wave_no, B.delivery_start_time
+             FROM doc_shipment_packages A
+             LEFT JOIN doc_so_master B ON A.so_no = B.so_no
+             WHERE a.create_at BETWEEN ? AND ?
+             GROUP BY a.so_no, B.customer_city, B.wave_no, B.delivery_start_time)
+
+            UNION
+
+            (SELECT a.so_no, B.customer_city, B.wave_no, B.delivery_start_time
+             FROM doc_shipment_packages_bak A
+             LEFT JOIN doc_so_master_bak B ON A.so_no = B.so_no
+             WHERE a.create_at BETWEEN ? AND ?
+             GROUP BY a.so_no, B.customer_city, B.wave_no, B.delivery_start_time)
+        `;
+
+        // חשוב: אנחנו שולחים את התאריכים פעמיים - פעם אחת ל-SELECT הראשון ופעם אחת לשני
+        const params = [startDate, endDateTime, startDate, endDateTime];
+
         const [mysqlResults] = await mysqlPool.query(sqlQuery, params);
 
         if (mysqlResults.length === 0) {
@@ -49,7 +61,6 @@ const syncInvoicesToMongo = async (req, res) => {
         res.status(500).json({ message: 'Error during the sync process.' });
     }
 };
-
 
 
 const updateSyncedInvoice = async (req, res) => {

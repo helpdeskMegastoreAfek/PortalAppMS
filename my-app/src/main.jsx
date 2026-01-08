@@ -6,9 +6,9 @@ import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 // Your App Components
 import EmployeePortal from './apps/mainbord';
-// import MealOrdering from './apps/MealOrdering';
+import MealOrdering from './apps/MealOrdering';
 import BoxInventory from './apps/BoxInventory';
-import ITSupport from './apps/ITSupport';
+import ITSupport from './apps/Dashboard';
 import Login from './pages/Login';
 import AdminPanel from './apps/AdminPanel';
 import AdminBoxInventory from './apps/AdminBoxInventory';
@@ -18,6 +18,7 @@ import Developer from './apps/developer';
 import DataSyncPage from './apps/DataSyncPage';
 import BoxInventoryNew from './apps/BoxInventoryNew';
 import Statistics from './apps/Statistics';
+import Dashboard from './apps/Dashboard';
 import './index.css';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
@@ -27,7 +28,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/" element={<EmployeePortal />} />
-          {/* <Route path="/meal" element={<MealOrdering />} /> */}
+          <Route path="/meal" element={<MealOrdering />} />
           <Route path="/boxes" element={<BoxInventory />} />
           <Route path="/it" element={<ITSupport />} />
           <Route path="/adminBox" element={<AdminBoxInventory />} />
@@ -39,6 +40,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
           <Route path="/BoxInventoryNew" element={<BoxInventoryNew />} />
           <Route path="/developer" element={<Developer />} />
           <Route path="/statistics" element={<Statistics />} />
+          <Route path="/Dashboard" element={<Dashboard />} />
         </Routes>
       </BrowserRouter>
     </LocalizationProvider>
