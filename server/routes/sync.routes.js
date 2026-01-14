@@ -8,4 +8,6 @@ router.post('/mysql-to-mongo', syncController.syncInvoicesToMongo);
 
 router.put('/synced-invoices/:so_no', updateSyncedInvoice);
 
+router.get('/sales-by-sku', syncController.getSalesBySku);
+
 module.exports = router;

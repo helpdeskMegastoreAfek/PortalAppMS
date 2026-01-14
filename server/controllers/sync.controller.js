@@ -88,8 +88,42 @@ const updateSyncedInvoice = async (req, res) => {
     }
 };
 
+const getSalesBySku = async (req, res) => {
+    const { startDate, endDate, stockEnv } = req.query;
+
+    if (!startDate || !endDate || !stockEnv) {
+        return res.status(400).json({ message: 'Missing parameters' });
+    }
+
+    try {
+        const endDateTime = `${endDate} 23:59:59`;
+        
+        const sqlQuery = `
+            SELECT locat_code, sku_id as skuId, sku_id as guid, qty as accesQty
+            FROM (
+                SELECT a.sku_id, SUM(a.picked_qty_each) qty, e.locat_code
+                FROM doc_alloc_details a
+                INNER JOIN bas_wharea c ON a.work_area_id = c.wh_area_id
+                INNER JOIN bas_sku d ON a.sku_id = d.sku_id
+                LEFT JOIN bas_location e ON a.locat_id = e.locat_id
+                WHERE a.create_at BETWEEN ? AND ?
+                AND d.stock_env = ?
+                GROUP BY a.sku_id, e.locat_code
+                ORDER BY qty DESC
+            ) temp
+        `;
+
+        const [results] = await mysqlPool.query(sqlQuery, [startDate, endDateTime, stockEnv]);
+        res.status(200).json(results);
+    } catch (error) {
+        console.error('Error fetching sales by SKU:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
 
 module.exports = {
     syncInvoicesToMongo,
-    updateSyncedInvoice
+    updateSyncedInvoice,
+    getSalesBySku
 };
