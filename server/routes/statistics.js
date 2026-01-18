@@ -9,9 +9,20 @@ const { mysqlPool } = require('../database');
 // GET /api/statistics/picking
 router.get('/picking', async (req, res) => {
     try {
-        const stats = await PickingStats.find({}).sort({ date: -1 });
+        const startTime = Date.now();
+        
+        // Projection - רק השדות הנדרשים (מפחית את גודל התגובה)
+        const stats = await PickingStats.find({})
+            .select('date ownerName orderNumber waveNumber skuCode batch location container quantity workstation shippingBox temperatureZone picker unloadingDock orderSequenceNumber orderReleaseTime')
+            .sort({ date: -1 })
+            .lean(); // lean() מחזיר plain JavaScript objects במקום Mongoose documents (מהיר יותר)
+        
+        const endTime = Date.now();
+        console.log(`GET /picking: Fetched ${stats.length} records in ${(endTime - startTime) / 1000} seconds`);
+        
         res.json(stats);
     } catch (err) {
+        console.error('Error fetching picking stats:', err);
         res.status(500).json({ message: "Failed to fetch stats from MongoDB", error: err.message });
     }
 });
@@ -29,9 +40,18 @@ router.post('/refresh', async (req, res) => {
         const end = new Date(endDate);
         end.setUTCHours(23, 59, 59, 999);
         
+        // בדיקת טווח תאריכים מקסימלי (30 ימים)
+        const daysDiff = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+        if (daysDiff > 30) {
+            return res.status(400).json({ 
+                message: `טווח תאריכים גדול מדי. מקסימום 30 ימים, התקבל: ${daysDiff} ימים` 
+            });
+        }
+        
+       
         const UNIFIED_SQL_QUERY = `
             (SELECT 
-                DATE_FORMAT(a.create_at, '%Y-%m-%d') AS date, c.owner_name AS ownerName, a.so_no AS orderNumber,
+                a.create_at AS createAt, c.owner_name AS ownerName, a.so_no AS orderNumber,
                 f.wave_no AS waveNumber, b.sku_code AS skuCode, a.lot_id AS batch, d.locat_code AS location,
                 a.trace_id AS container, SUM(a.qty_each) AS quantity, k.sow_area_code AS workstation,
                 a.drop_id AS shippingBox, e.dict_list AS temperatureZone, h.create_by AS picker,
@@ -48,13 +68,13 @@ router.post('/refresh', async (req, res) => {
             LEFT JOIN bas_sow_area k ON j.sow_area_id = k.sow_area_id
             LEFT JOIN doc_wave_master m ON f.wave_no = m.wave_no
             WHERE a.create_at BETWEEN ? AND ?
-            GROUP BY date, ownerName, orderNumber, waveNumber, skuCode, batch, location, container, workstation, 
+            GROUP BY a.create_at, ownerName, orderNumber, waveNumber, skuCode, batch, location, container, workstation, 
                      shippingBox, temperatureZone, picker, unloadingDock, orderSequenceNumber, orderReleaseTime)
             
             UNION ALL 
             
             (SELECT 
-                DATE_FORMAT(a.create_at, '%Y-%m-%d') AS date, c.owner_name AS ownerName, a.so_no AS orderNumber,
+                a.create_at AS createAt, c.owner_name AS ownerName, a.so_no AS orderNumber,
                 f.wave_no AS waveNumber, b.sku_code AS skuCode, a.lot_id AS batch, d.locat_code AS location,
                 a.trace_id AS container, SUM(a.qty_each) AS quantity, k.sow_area_code AS workstation,
                 a.drop_id AS shippingBox, e.dict_list AS temperatureZone, h.create_by AS picker,
@@ -71,23 +91,113 @@ router.post('/refresh', async (req, res) => {
             LEFT JOIN bas_sow_area k ON j.sow_area_id = k.sow_area_id
             LEFT JOIN doc_wave_master_bak m ON f.wave_no = m.wave_no
             WHERE a.create_at BETWEEN ? AND ?
-            GROUP BY date, ownerName, orderNumber, waveNumber, skuCode, batch, location, container, workstation, 
+            GROUP BY a.create_at, ownerName, orderNumber, waveNumber, skuCode, batch, location, container, workstation, 
                      shippingBox, temperatureZone, picker, unloadingDock, orderSequenceNumber, orderReleaseTime);
         `;
 
-        console.log(`Querying with dual-key join (task_id + drop_id) for range: ${start.toISOString()} to ${end.toISOString()}`);
+        console.log(`Processing range: ${start.toISOString()} to ${end.toISOString()} (${daysDiff} days)`);
         
-        const params = [start, end, start, end];
-        const [rows] = await mysqlPool.execute(UNIFIED_SQL_QUERY, params);
+        // מחיקת נתונים קיימים לפני התחלה
+        const deleteStartTime = Date.now();
+        await PickingStats.deleteMany({ date: { $gte: start.toISOString().split('T')[0], $lte: end.toISOString().split('T')[0] } });
+        const deleteEndTime = Date.now();
+        console.log(`Delete took ${(deleteEndTime - deleteStartTime) / 1000} seconds.`);
         
-        console.log(`Fetched a total of ${rows.length} records from SQL.`);
+        // חלוקה לפי ימים - מטפלים בכל יום בנפרד כדי להפחית שימוש בזיכרון
+        const BATCH_SIZE = 300; // הקטנה נוספת
+        let totalInserted = 0;
+        const processStartTime = Date.now();
         
-        await PickingStats.deleteMany({ date: { $gte: start, $lte: end } });
-        const result = await PickingStats.insertMany(rows);
+        // לולאה על כל יום בטווח
+        for (let currentDate = new Date(start); currentDate <= end; currentDate.setDate(currentDate.getDate() + 1)) {
+            const dayStart = new Date(currentDate);
+            dayStart.setUTCHours(0, 0, 0, 0);
+            const dayEnd = new Date(currentDate);
+            dayEnd.setUTCHours(23, 59, 59, 999);
+            
+            const dayStr = dayStart.toISOString().split('T')[0];
+            console.log(`Processing day: ${dayStr}`);
+            
+            try {
+                // שאילתה ליום אחד בלבד
+                const dayParams = [dayStart, dayEnd, dayStart, dayEnd];
+                const [dayRows] = await mysqlPool.execute(UNIFIED_SQL_QUERY, dayParams);
+                
+                if (dayRows.length === 0) {
+                    console.log(`No data for ${dayStr}`);
+                    continue;
+                }
+                
+                console.log(`Fetched ${dayRows.length} records for ${dayStr}`);
+                
+                // ניקוי זיכרון אחרי כל שאילתה
+                if (global.gc && dayRows.length > 5000) {
+                    global.gc();
+                }
+                
+                // עיבוד והכנסה בחבילות קטנות
+                for (let i = 0; i < dayRows.length; i += BATCH_SIZE) {
+                    const batchEnd = Math.min(i + BATCH_SIZE, dayRows.length);
+                    const batch = dayRows.slice(i, batchEnd);
+                    const batchSize = batch.length;
+                    
+                    // המרת createAt ל-date
+                    const processedBatch = [];
+                    for (const row of batch) {
+                        processedBatch.push({
+                            ...row,
+                            date: row.createAt ? new Date(row.createAt).toISOString().split('T')[0] : dayStr
+                        });
+                    }
+                    
+                    try {
+                        await PickingStats.insertMany(processedBatch, { ordered: false });
+                        totalInserted += batchSize;
+                    } catch (error) {
+                        console.error(`Error inserting batch for ${dayStr}:`, error.message);
+                        if (error.writeErrors) {
+                            const successful = batchSize - error.writeErrors.length;
+                            totalInserted += successful;
+                        }
+                    }
+                    
+                    // ניקוי זיכרון מיידי
+                    processedBatch.length = 0;
+                    batch.length = 0;
+                    
+                    // ניקוי זיכרון כל 3 חבילות
+                    if (global.gc && (i / BATCH_SIZE) % 3 === 0) {
+                        global.gc();
+                    }
+                }
+                
+                // שחרור נתוני היום מהזיכרון
+                dayRows.length = 0;
+                
+                // ניקוי זיכרון אחרי כל יום
+                if (global.gc) {
+                    global.gc();
+                }
+                
+            } catch (dayError) {
+                console.error(`Error processing day ${dayStr}:`, dayError.message);
+                // ממשיכים ליום הבא גם אם יש שגיאה
+            }
+        }
+        
+        // ניקוי זיכרון סופי
+        if (global.gc) {
+            global.gc();
+            console.log('Final GC called');
+        }
+        
+        const processEndTime = Date.now();
+        console.log(`Total processing took ${(processEndTime - processStartTime) / 1000} seconds. Total inserted: ${totalInserted}`);
 
         res.status(200).json({ 
             message: `Refresh successful`, 
-            syncedRecords: result.length 
+            syncedRecords: totalInserted,
+            totalFetched: totalInserted
         });
 
     } catch (error) {
@@ -182,6 +292,14 @@ router.post('/inbound/refresh', async (req, res) => {
     const end = new Date(endDate);
     end.setUTCHours(23, 59, 59, 999);
 
+    // בדיקת טווח תאריכים מקסימלי (30 ימים)
+    const daysDiff = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+    if (daysDiff > 30) {
+        return res.status(400).json({ 
+            message: `טווח תאריכים גדול מדי. מקסימום 30 ימים, התקבל: ${daysDiff} ימים` 
+        });
+    }
+
     console.log(`Starting INBOUND refresh for corrected date range: ${start.toISOString()} to ${end.toISOString()}`);
 
     try {
@@ -232,20 +350,93 @@ router.post('/inbound/refresh', async (req, res) => {
                 container, workArea, temperatureZone, receiver, containerChanger;
         `;
         
-        const [results] = await mysqlPool.execute(sqlQuery, [start, end]);
-        console.log(`Fetched ${results.length} INBOUND records from primary SQL DB (excluding M2G-STAGE).`);
+        // מחיקת נתונים קיימים לפני התחלה
+        await InboundStats.deleteMany({ date: { $gte: start, $lte: end } });
         
-        if (results.length === 0) {
-            await InboundStats.deleteMany({ date: { $gte: start, $lte: end } });
-            return res.status(200).json({ message: 'No new data found. Existing data for this range cleared.' });
+        // חלוקה לפי ימים - מטפלים בכל יום בנפרד כדי להפחית שימוש בזיכרון
+        const BATCH_SIZE = 300; // הקטנה נוספת
+        let totalInserted = 0;
+        const daysDiff = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+        
+        // לולאה על כל יום בטווח
+        for (let currentDate = new Date(start); currentDate <= end; currentDate.setDate(currentDate.getDate() + 1)) {
+            const dayStart = new Date(currentDate);
+            dayStart.setUTCHours(0, 0, 0, 0);
+            const dayEnd = new Date(currentDate);
+            dayEnd.setUTCHours(23, 59, 59, 999);
+            
+            const dayStr = dayStart.toISOString().split('T')[0];
+            console.log(`Processing INBOUND day: ${dayStr}`);
+            
+            try {
+                // שאילתה ליום אחד בלבד
+                const [dayResults] = await mysqlPool.execute(sqlQuery, [dayStart, dayEnd]);
+                
+                if (dayResults.length === 0) {
+                    console.log(`No INBOUND data for ${dayStr}`);
+                    continue;
+                }
+                
+                console.log(`Fetched ${dayResults.length} INBOUND records for ${dayStr}`);
+                
+                // ניקוי זיכרון אחרי כל שאילתה
+                if (global.gc && dayResults.length > 5000) {
+                    global.gc();
+                }
+                
+                // עיבוד והכנסה בחבילות קטנות
+                for (let i = 0; i < dayResults.length; i += BATCH_SIZE) {
+                    const batchEnd = Math.min(i + BATCH_SIZE, dayResults.length);
+                    const batch = dayResults.slice(i, batchEnd);
+                    const batchSize = batch.length;
+                    
+                    try {
+                        await InboundStats.insertMany(batch, { ordered: false });
+                        totalInserted += batchSize;
+                    } catch (error) {
+                        console.error(`Error inserting INBOUND batch for ${dayStr}:`, error.message);
+                        if (error.writeErrors) {
+                            const successful = batchSize - error.writeErrors.length;
+                            totalInserted += successful;
+                        }
+                    }
+                    
+                    // ניקוי זיכרון מיידי
+                    batch.length = 0;
+                    
+                    // ניקוי זיכרון כל 3 חבילות
+                    if (global.gc && (i / BATCH_SIZE) % 3 === 0) {
+                        global.gc();
+                    }
+                }
+                
+                // שחרור נתוני היום מהזיכרון
+                dayResults.length = 0;
+                
+                // ניקוי זיכרון אחרי כל יום
+                if (global.gc) {
+                    global.gc();
+                }
+                
+            } catch (dayError) {
+                console.error(`Error processing INBOUND day ${dayStr}:`, dayError.message);
+                // ממשיכים ליום הבא גם אם יש שגיאה
+            }
+        }
+        
+        // ניקוי זיכרון סופי
+        if (global.gc) {
+            global.gc();
+            console.log('Final GC called for INBOUND');
         }
 
-        await InboundStats.deleteMany({ date: { $gte: start, $lte: end } });
-        const insertResult = await InboundStats.insertMany(results);
-
-        console.log(`Successfully refreshed ${insertResult.length} inbound records.`);
+        console.log(`Successfully refreshed ${totalInserted} inbound records.`);
         
-        res.status(200).json({ message: 'Inbound statistics refreshed successfully.', syncedRecords: insertResult.length });
+        res.status(200).json({ 
+            message: 'Inbound statistics refreshed successfully.', 
+            syncedRecords: totalInserted,
+            totalFetched: totalInserted
+        });
 
     } catch (error) {
         console.error('Error during INBOUND statistics refresh:', error);

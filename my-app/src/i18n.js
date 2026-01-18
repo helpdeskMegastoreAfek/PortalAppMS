@@ -8,6 +8,8 @@ const resources = {
       // Header
       dashboard: 'Dashboard',
       logout: 'Logout',
+      changeLanguage: 'Change Language',
+      changePassword: 'Change Password',
 
       // DashboardPage
       invoicesDashboard: 'Invoices Dashboard',
@@ -53,6 +55,8 @@ const resources = {
       // Header
       dashboard: 'לוח בקרה',
       logout: 'התנתק',
+      changeLanguage: 'שנה שפה',
+      changePassword: 'שנה סיסמה',
 
       // Invoice page
       invoicesDashboard: 'לוח חשבוניות',

@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "nodemon server.js"
+    "dev": "nodemon --max-old-space-size=12288 --expose-gc server.js",
+    "start": "node --max-old-space-size=12288 --expose-gc server.js"
   },
   "keywords": [],
   "author": "",

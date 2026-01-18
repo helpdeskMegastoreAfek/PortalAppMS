@@ -3,7 +3,21 @@
 import { useState } from 'react';
 import { Button } from '../components/ui/Button';
 import UserManager from '../components/UserManager';
-import { ChevronsDown, ChevronsUp } from 'lucide-react';
+import {
+  ChevronsDown,
+  ChevronsUp,
+  UserPlus,
+  Users,
+  User as UserIcon,
+  Mail,
+  Lock,
+  Shield,
+  Building2,
+  Grid3x3,
+  FileText,
+  CheckCircle2,
+  XCircle,
+} from 'lucide-react';
 import Header from '../components/Header';
 import Sidebar from '../components/Sidebar';
 import toast, { Toaster } from 'react-hot-toast';
@@ -11,13 +25,18 @@ import { Switch, FormControlLabel, FormGroup } from '@mui/material';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-function PermissionSwitch({ name, checked, onChange, label }) {
+function PermissionSwitch({ name, checked, onChange, label, className = '' }) {
   return (
     <FormControlLabel
       control={<Switch name={name} checked={checked} onChange={onChange} size="small" />}
       label={label}
       labelPlacement="start"
-      className="w-full flex items-center justify-between text-sm"
+      className={`w-full flex items-center justify-between text-sm ${className}`}
+      sx={{
+        '& .MuiFormControlLabel-label': {
+          color: className.includes('text-white') ? 'white' : 'inherit',
+        },
+      }}
     />
   );
 }
@@ -36,6 +55,7 @@ export default function AdminPanel() {
     viewFinancials: false,
     editInvoices: false,
     undoInvoice: false,
+    deleteInvoices: false,
   });
 
   const user = JSON.parse(localStorage.getItem('user'));
@@ -53,7 +73,7 @@ export default function AdminPanel() {
     { label: 'Admin Box Inventory', value: '/adminBox' },
     { label: 'Invoice Panel', value: '/invoice' },
     { label: 'Statistics Panel', value: '/statistics' },
-    { label: 'Data Sync WMS Panel', value: '/AdminBoxInventoryNew' },
+    { label: 'Data Sync WMS Panel', value: '/DataSyncPage' },
     { label: 'Developer', value: '/developer' },
     { label: 'Admin Panel', value: '/admin' },
   ];
@@ -106,7 +126,12 @@ export default function AdminPanel() {
         setAllowedApps([]);
         setShowForm(false);
         setReloadUsers((prev) => prev + 1);
-        setPermissions({});
+        setPermissions({
+          viewFinancials: false,
+          editInvoices: false,
+          undoInvoice: false,
+          deleteInvoices: false,
+        });
         return 'User created successfully!';
       }),
       {
@@ -118,172 +143,307 @@ export default function AdminPanel() {
   };
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       <Toaster position="top-center" />
       <Header user={user} />
       <Sidebar user={user} />
 
-      <div className="max-w-10/12 mx-auto px-6 p-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
-        <div className="mb-12">
-          <h1 className="text-3xl font-light text-gray-900 mb-2">Admin Panel</h1>
+        <div className="mb-8">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 bg-gray-900 rounded-lg">
+              <Shield className="w-6 h-6 text-white" />
+            </div>
+            <h1 className="text-3xl font-semibold text-gray-900">Admin Panel</h1>
+          </div>
+          <p className="text-gray-600 ml-14">Manage users, permissions, and access controls</p>
         </div>
 
         {/* Toggle Button */}
-        <div className="mb-8">
+        <div className="mb-6">
           <Button
             onClick={() => setShowForm(!showForm)}
-            className={`flex items-center gap-2 px-4 py-2 text-sm border transition-colors ${
+            className={`flex items-center gap-2 px-6 py-3 text-sm font-medium rounded-lg shadow-sm transition-all duration-200 ${
               showForm
-                ? 'bg-gray-900 text-white border-gray-900'
-                : 'bg-white text-gray-900 border-gray-300 hover:border-gray-400'
+                ? 'bg-gray-900 text-white hover:bg-gray-800 shadow-md'
+                : 'bg-white text-gray-900 border border-gray-300 hover:border-gray-400 hover:shadow-md'
             }`}
           >
-            {showForm ? <ChevronsUp size={16} /> : <ChevronsDown size={16} />}
-            {showForm ? 'Hide Form' : 'Add User'}
+            {showForm ? (
+              <>
+                <ChevronsUp size={18} />
+                <span>Hide Form</span>
+              </>
+            ) : (
+              <>
+                <UserPlus size={18} />
+                <span>Add New User</span>
+              </>
+            )}
           </Button>
         </div>
 
         {/* Add User Form */}
         {showForm && (
-          <div className="mb-12 border border-gray-200 bg-gray-50">
-            <div className="border-b border-gray-200 px-6 py-4">
-              <h2 className="text-lg font-medium text-gray-900">Add New User</h2>
+          <div className="mb-8 bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden animate-in fade-in zoom-in-95">
+            <div className="bg-gradient-to-r from-gray-900 to-gray-800 px-6 py-4 border-b border-gray-200">
+              <div className="flex items-center gap-3">
+                <UserPlus className="w-5 h-5 text-white" />
+                <h2 className="text-lg font-semibold text-white">Add New User</h2>
+              </div>
             </div>
 
-            <div className="p-6 space-y-6">
-              {/* Basic Info */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm text-gray-700 mb-1">Username *</label>
+            <div className="p-6 sm:p-8 space-y-8">
+              {/* Basic Info Section */}
+              <div>
+                <div className="flex items-center gap-2 mb-4 pb-2 border-b border-gray-200">
+                  <UserIcon className="w-4 h-4 text-gray-600" />
+                  <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">
+                    Basic Information
+                  </h3>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                      <UserIcon className="w-4 h-4 text-gray-500" />
+                      Username <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all"
+                      placeholder="Enter username"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                      <Mail className="w-4 h-4 text-gray-500" />
+                      Email <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all"
+                      placeholder="user@example.com"
+                    />
+                  </div>
+                </div>
+
+                <div className="mt-6 space-y-2">
+                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                    <Lock className="w-4 h-4 text-gray-500" />
+                    Password <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all"
+                    placeholder="Enter password"
+                  />
+                </div>
+              </div>
+
+              {/* Role and Status Section */}
+              <div>
+                <div className="flex items-center gap-2 mb-4 pb-2 border-b border-gray-200">
+                  <Shield className="w-4 h-4 text-gray-600" />
+                  <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">
+                    Role & Status
+                  </h3>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700">Role</label>
+                    <div className="relative">
+                      <select
+                        value={role}
+                        onChange={(e) => setRole(e.target.value)}
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all appearance-none bg-white cursor-pointer"
+                      >
+                        <option value="user">User</option>
+                        <option value="admin">Admin</option>
+                        <option value="developer">Developer</option>
+                      </select>
+                      <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                        <ChevronsDown className="w-4 h-4 text-gray-400" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700">Status</label>
+                    <div className="relative">
+                      <select
+                        value={status}
+                        onChange={(e) => setStatus(e.target.value)}
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all appearance-none bg-white cursor-pointer"
+                      >
+                        <option value="Active">Active</option>
+                        <option value="Disable">Disable</option>
+                      </select>
+                      <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                        <ChevronsDown className="w-4 h-4 text-gray-400" />
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 mt-2">
+                      {status === 'Active' ? (
+                        <CheckCircle2 className="w-4 h-4 text-green-600" />
+                      ) : (
+                        <XCircle className="w-4 h-4 text-red-600" />
+                      )}
+                      <span className="text-xs text-gray-500">
+                        {status === 'Active' ? 'User will be able to login' : 'User access disabled'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Organization Unit */}
+              <div>
+                <div className="flex items-center gap-2 mb-4 pb-2 border-b border-gray-200">
+                  <Building2 className="w-4 h-4 text-gray-600" />
+                  <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">
+                    Organization
+                  </h3>
+                </div>
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Organization Unit
+                  </label>
                   <input
                     type="text"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 text-sm focus:outline-none focus:border-gray-500"
+                    value={orgUnit}
+                    onChange={(e) => setOrgUnit(e.target.value)}
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all"
+                    placeholder="/IT/Support"
                   />
-                </div>
-
-                <div>
-                  <label className="block text-sm text-gray-700 mb-1">Email *</label>
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 text-sm focus:outline-none focus:border-gray-500"
-                  />
+                  <p className="text-xs text-gray-500 mt-1">Optional: Specify the organizational unit</p>
                 </div>
               </div>
 
+              {/* Applications Section */}
               <div>
-                <label className="block text-sm text-gray-700 mb-1">Password *</label>
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 text-sm focus:outline-none focus:border-gray-500"
-                />
-              </div>
-
-              {/* Role and Status */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm text-gray-700 mb-1">Role</label>
-                  <select
-                    value={role}
-                    onChange={(e) => setRole(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 text-sm focus:outline-none focus:border-gray-500"
-                  >
-                    <option value="user">User</option>
-                    <option value="admin">Admin</option>
-                    <option value="developer">Developer</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm text-gray-700 mb-1">Status</label>
-                  <select
-                    value={status}
-                    onChange={(e) => setStatus(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 text-sm focus:outline-none focus:border-gray-500"
-                  >
-                    <option value="Active">Active</option>
-                    <option value="Disable">Disable</option>
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm text-gray-700 mb-1">Organization Unit</label>
-                <input
-                  type="text"
-                  value={orgUnit}
-                  onChange={(e) => setOrgUnit(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 text-sm focus:outline-none focus:border-gray-500"
-                  placeholder="/IT/Support"
-                />
-              </div>
-
-              {/* Applications */}
-              <div>
-                <label className="block text-sm text-gray-700 mb-3">Allowed Applications</label>
-                <div className="space-y-2">
-                  {appOptions.map((app) => (
-                    <FormGroup key={app.value}>
-                      <PermissionSwitch
-                        type="checkbox"
-                        checked={allowedApps.includes(app.value)}
-                        onChange={() => toggleApp(app.value)}
-                        className="w-4 h-4"
-                        label={app.label}
-                      />
-                    </FormGroup>
-                  ))}
-                </div>
-              </div>
-
-              {allowedApps.includes('/invoice') && (
-                <div className="p-4 pt-6 border-t border-gray-200">
-                  <h3 className="text-sm font-medium text-gray-800 mb-3">
-                    Invoice Panel Permissions
+                <div className="flex items-center gap-2 mb-4 pb-2 border-b border-gray-200">
+                  <Grid3x3 className="w-4 h-4 text-gray-600" />
+                  <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">
+                    Allowed Applications
                   </h3>
-                  <div className="space-y-2">
-                    <FormGroup className="space-y-2">
-                      <PermissionSwitch
-                        name="viewFinancials"
-                        checked={permissions.viewFinancials}
-                        onChange={handlePermissionChange}
-                        label="View financial summary"
-                      ></PermissionSwitch>
-                      <PermissionSwitch
-                        name="editInvoices"
-                        checked={permissions.editInvoices}
-                        onChange={handlePermissionChange}
-                        label="edit invoices"
-                      ></PermissionSwitch>
-                      <PermissionSwitch
-                        name="undoInvoice"
-                        checked={permissions.undoInvoice}
-                        onChange={handlePermissionChange}
-                        label="Undo"
-                      ></PermissionSwitch>
-                      <PermissionSwitch
-                        name="deleteInvoices"
-                        checked={permissions.deleteInvoices}
-                        onChange={handlePermissionChange}
-                        label="Delete invoices (Only Developers)"
-                      ></PermissionSwitch>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                  <p className="text-xs text-gray-600 mb-4">
+                    Select which applications this user can access
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {appOptions.map((app) => {
+                      const isSelected = allowedApps.includes(app.value);
+                      return (
+                        <div
+                          key={app.value}
+                          className={`p-3 rounded-lg border transition-all cursor-pointer ${
+                            isSelected
+                              ? 'bg-gray-900 border-gray-900'
+                              : 'bg-white border-gray-300 hover:border-gray-400 hover:bg-gray-50'
+                          }`}
+                          onClick={() => toggleApp(app.value)}
+                        >
+                          <FormGroup>
+                            <PermissionSwitch
+                              checked={isSelected}
+                              onChange={() => toggleApp(app.value)}
+                              label={app.label}
+                              className={isSelected ? 'text-white' : ''}
+                            />
+                          </FormGroup>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              {/* Invoice Permissions Section */}
+              {allowedApps.includes('/invoice') && (
+                <div className="p-5 bg-blue-50 rounded-lg border border-blue-200 animate-in fade-in">
+                  <div className="flex items-center gap-2 mb-4">
+                    <FileText className="w-4 h-4 text-blue-700" />
+                    <h3 className="text-sm font-semibold text-blue-900 uppercase tracking-wide">
+                      Invoice Panel Permissions
+                    </h3>
+                  </div>
+                  <div className="space-y-3">
+                    <FormGroup className="space-y-3">
+                      <div className="bg-white p-3 rounded-lg border border-blue-200">
+                        <PermissionSwitch
+                          name="viewFinancials"
+                          checked={permissions.viewFinancials}
+                          onChange={handlePermissionChange}
+                          label="View financial summary"
+                        />
+                      </div>
+                      <div className="bg-white p-3 rounded-lg border border-blue-200">
+                        <PermissionSwitch
+                          name="editInvoices"
+                          checked={permissions.editInvoices}
+                          onChange={handlePermissionChange}
+                          label="Edit invoices"
+                        />
+                      </div>
+                      <div className="bg-white p-3 rounded-lg border border-blue-200">
+                        <PermissionSwitch
+                          name="undoInvoice"
+                          checked={permissions.undoInvoice}
+                          onChange={handlePermissionChange}
+                          label="Undo invoices"
+                        />
+                      </div>
+                      <div className="bg-white p-3 rounded-lg border border-blue-200">
+                        <PermissionSwitch
+                          name="deleteInvoices"
+                          checked={permissions.deleteInvoices}
+                          onChange={handlePermissionChange}
+                          label="Delete invoices (Only Developers)"
+                        />
+                      </div>
                     </FormGroup>
                   </div>
                 </div>
               )}
 
-              <div className="pt-4 border-t border-gray-200">
+              {/* Submit Button */}
+              <div className="pt-6 border-t border-gray-200 flex items-center justify-end gap-4">
+                <Button
+                  onClick={() => {
+                    setShowForm(false);
+                    setUsername('');
+                    setPassword('');
+                    setEmail('');
+                    setOrgUnit('');
+                    setRole('user');
+                    setStatus('Active');
+                    setAllowedApps([]);
+                    setPermissions({
+                      viewFinancials: false,
+                      editInvoices: false,
+                      undoInvoice: false,
+                      deleteInvoices: false,
+                    });
+                  }}
+                  className="px-6 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-all"
+                >
+                  Cancel
+                </Button>
                 <Button
                   onClick={handleSubmit}
-                  className="bg-gray-900 text-white px-6 py-2 text-sm hover:bg-gray-800 transition-colors"
+                  className="px-8 py-2.5 text-sm font-medium text-white bg-gray-900 rounded-lg hover:bg-gray-800 shadow-md hover:shadow-lg transition-all flex items-center gap-2"
                 >
-                  Add User
+                  <UserPlus size={16} />
+                  <span>Create User</span>
                 </Button>
               </div>
             </div>
@@ -291,9 +451,12 @@ export default function AdminPanel() {
         )}
 
         {/* User Management */}
-        <div className="border border-gray-200">
-          <div className="border-b border-gray-200 px-6 py-4">
-            <h2 className="text-lg font-medium text-gray-900">User Management</h2>
+        <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+          <div className="bg-gradient-to-r from-gray-900 to-gray-800 px-6 py-4 border-b border-gray-200">
+            <div className="flex items-center gap-3">
+              <Users className="w-5 h-5 text-white" />
+              <h2 className="text-lg font-semibold text-white">User Management</h2>
+            </div>
           </div>
           <div>
             <UserManager

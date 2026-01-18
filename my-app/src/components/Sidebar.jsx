@@ -42,7 +42,7 @@ const appLinks = [
   },
   {
     label: 'Data Sync WMS',
-    path: '/AdminBoxInventoryNew',
+    path: '/DataSyncPage',
     icon: <RefreshCcw size={20} />,
   },
   {
@@ -94,7 +94,7 @@ export default function Sidebar({ user }) {
 
   const filteredRegularLinks = regularLinks.filter(
     (app) =>
-      (user?.role === 'admin' && user?.role === 'developer') ||
+      (user?.role === 'admin' || user?.role === 'developer') ||
       user?.allowedApps?.includes(app.path)
   );
 
