@@ -13,16 +13,17 @@ export default defineConfig({
     allowedHosts: [
       "172.20.0.49",
       "localhost",
+      "10.0.0.5",
     ],
-    https: {
-      key: fs.readFileSync('./172.20.0.49-key.pem'),
-      cert: fs.readFileSync('./172.20.0.49.pem'),
-    },
+    // HTTPS disabled to support multiple IPs (10.0.0.5 and 172.20.0.49)
+    // If you need HTTPS, create SSL certificates for 10.0.0.5 or use a wildcard certificate
+    // https: {
+    //   key: fs.readFileSync('./172.20.0.49-key.pem'),
+    //   cert: fs.readFileSync('./172.20.0.49.pem'),
+    // },
     hmr: {
-      host: '172.20.0.49',
-      port: 5173,
-      protocol: 'wss',
-      clientPort: 5173,
+      // HMR will work with both IPs when using HTTP
+      protocol: 'ws',
     },
   },
 });

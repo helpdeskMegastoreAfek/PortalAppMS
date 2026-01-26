@@ -2,10 +2,12 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Loader2, AlertCircle, User, Lock } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
 export default function Login() {
+  const { t } = useTranslation();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -41,13 +43,13 @@ export default function Login() {
     
     // ולידציה בסיסית
     if (!username.trim()) {
-      setError('אנא הזן שם משתמש');
+      setError(t('pleaseEnterUsername'));
       setShake(true);
       setTimeout(() => setShake(false), 500);
       return;
     }
     if (!password.trim()) {
-      setError('אנא הזן סיסמה');
+      setError(t('pleaseEnterPassword'));
       setShake(true);
       setTimeout(() => setShake(false), 500);
       return;
@@ -66,7 +68,7 @@ export default function Login() {
       const data = await res.json();
 
       if (!res.ok) {
-        const errorMessage = data.message || 'שגיאה בהתחברות';
+        const errorMessage = data.message || t('loginError');
         setError(errorMessage);
         setShake(true);
         setTimeout(() => setShake(false), 500);
@@ -95,7 +97,7 @@ export default function Login() {
         localStorage.removeItem('rememberMe');
       }
 
-      toast.success('התחברות בוצעה בהצלחה!', {
+      toast.success(t('loginSuccess'), {
         duration: 2000,
         position: 'top-center',
       });
@@ -108,7 +110,7 @@ export default function Login() {
       navigate('/');
     } catch (err) {
       console.error('Login error:', err);
-      const errorMessage = 'שגיאת שרת. אנא נסה שוב מאוחר יותר';
+      const errorMessage = t('serverError');
       setError(errorMessage);
       setShake(true);
       setTimeout(() => setShake(false), 500);
@@ -143,8 +145,8 @@ export default function Login() {
               onClick={handleLogin}
             />
           </div>
-          <h2 className="text-3xl font-bold text-gray-800 mb-2">Welcome Back</h2>
-          <p className="text-gray-500 text-sm">Please sign in to your account</p>
+          <h2 className="text-3xl font-bold text-gray-800 mb-2">{t('welcomeBack')}</h2>
+          <p className="text-gray-500 text-sm">{t('pleaseSignIn')}</p>
         </div>
         
         <form onSubmit={(e) => { e.preventDefault(); handleLogin(); }} className="animate-fade-in-up">
@@ -158,14 +160,14 @@ export default function Login() {
 
           <div className="mb-5">
             <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">
-              Username
+              {t('username')}
             </label>
             <div className="relative">
               <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
               <input
                 id="username"
                 type="text"
-                placeholder="Enter your username"
+                placeholder={t('enterUsername')}
                 className="w-full border-2 border-gray-300 pl-10 pr-3 py-3 rounded-lg focus:outline-none focus:border-black transition-colors"
                 value={username}
                 onChange={(e) => {
@@ -181,14 +183,14 @@ export default function Login() {
           
           <div className="mb-4">
             <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-              Password
+              {t('password')}
             </label>
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
               <input
                 id="password"
                 type={showPassword ? 'text' : 'password'}
-                placeholder="Enter your password"
+                placeholder={t('enterPassword')}
                 className="w-full border-2 border-gray-300 pl-10 pr-10 py-3 rounded-lg focus:outline-none focus:border-black transition-colors"
                 value={password}
                 onChange={(e) => {
@@ -221,7 +223,7 @@ export default function Login() {
               disabled={isLoading}
             />
             <label htmlFor="rememberMe" className="ml-2 text-sm text-gray-700 cursor-pointer">
-              זכור אותי
+              {t('rememberMe')}
             </label>
           </div>
 
@@ -230,7 +232,7 @@ export default function Login() {
             <button
               type="button"
               onClick={() => {
-                toast('אנא פנה לצוות IT לקבלת עזרה', {
+                toast(t('forgotPasswordMessage'), {
                   icon: 'ℹ️',
                   duration: 5000,
                   position: 'top-center',
@@ -239,7 +241,7 @@ export default function Login() {
               className="text-sm text-gray-600 hover:text-black transition-colors underline"
               disabled={isLoading}
             >
-              שכחת סיסמה?
+              {t('forgotPassword')}
             </button>
           </div>
           
@@ -252,10 +254,10 @@ export default function Login() {
             {isLoading ? (
               <>
                 <Loader2 className="w-5 h-5 animate-spin" />
-                <span>מתחבר...</span>
+                <span>{t('loggingIn')}</span>
               </>
             ) : (
-              'Login'
+              t('login')
             )}
           </button>
         </form>

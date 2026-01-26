@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Check, ChevronLeft, ChevronRight, Save, 
@@ -280,7 +281,7 @@ const FavoritesBar = ({ favorites, onLoadFavorite, onDeleteFavorite, onSaveCurre
           className="flex items-center gap-2 px-4 py-2 bg-rose-50 text-rose-600 rounded-full border border-rose-100 font-bold text-sm hover:bg-rose-100 transition-colors whitespace-nowrap shrink-0"
         >
           <Heart size={16} className="fill-current" />
-          שמור שילוב
+          {t('saveCombination')}
         </button>
 
         {/* List of Favorites */}
@@ -302,7 +303,7 @@ const FavoritesBar = ({ favorites, onLoadFavorite, onDeleteFavorite, onSaveCurre
         ))}
         
         {favorites.length === 0 && (
-          <span className="text-xs text-gray-400 italic">שמור את המנות הקבועות שלך לשימוש מהיר...</span>
+          <span className="text-xs text-gray-400 italic">{t('saveYourRegularMeals')}</span>
         )}
       </div>
     </div>
@@ -335,7 +336,7 @@ const FloatingDock = ({ activeDay, days, onNext, onPrev, currentMeal, onOpenSumm
                     isLastDay ? "bg-green-500 text-white" : "bg-white text-black"
                 )}
             >
-                {isLastDay ? 'סיום' : 'הבא'}
+                {isLastDay ? t('finish') : t('next')}
                 {isLastDay ? <Check size={16} /> : <ChevronLeft size={16} />}
             </button>
         </div>
@@ -402,6 +403,7 @@ const DaySelector = ({ days, activeDay, setActiveDay, meals }) => {
 
 // Main App Component
 export default function MealOrdering() {
+  const { t } = useTranslation();
   const [meals, setMeals] = useState(days.map((day) => ({ day, main: '', salad1: '', salad2: '', side1: '', side2: '', isSkipped: false })));
   const [activeDay, setActiveDay] = useState(0);
   const [user, setUser] = useState(null);
@@ -447,7 +449,7 @@ export default function MealOrdering() {
       } else {
         if (!currentMeal[field1]) updates = { [field1]: itemName };
         else if (!currentMeal[field2]) updates = { [field2]: itemName };
-        else { toast('מקסימום 2 בחירות', { icon: '✋', style: { borderRadius: '10px', background: '#333', color: '#fff'} }); return; }
+        else { toast(t('maxTwoSelections') || 'מקסימום 2 בחירות', { icon: '✋', style: { borderRadius: '10px', background: '#333', color: '#fff'} }); return; }
       }
     }
     setMeals(prev => prev.map((meal, idx) => idx === activeDay ? { ...meal, ...updates } : meal));
@@ -464,7 +466,7 @@ export default function MealOrdering() {
   const handleSaveFavorite = () => {
     const current = meals[activeDay];
     if (current.isSkipped || !current.main) {
-      toast.error('בחר מנה עיקרית לפני שמירה');
+      toast.error(t('selectMainBeforeSave') || 'בחר מנה עיקרית לפני שמירה');
       return;
     }
     const name = window.prompt('תן שם לשילוב הזה (למשל: שניצל ופירה)');
@@ -483,7 +485,7 @@ export default function MealOrdering() {
     const updatedFavs = [...favorites, newFav];
     setFavorites(updatedFavs);
     localStorage.setItem('mealFavorites', JSON.stringify(updatedFavs));
-    toast.success('נוסף למועדפים!');
+    toast.success(t('addedToFavorites') || 'נוסף למועדפים!');
   };
 
   const handleLoadFavorite = (fav) => {
@@ -503,16 +505,16 @@ export default function MealOrdering() {
   };
 
   const handleDeleteFavorite = (id) => {
-    if(!window.confirm('למחוק את המועדף הזה?')) return;
+    if(!window.confirm(t('deleteFavoriteConfirm') || 'למחוק את המועדף הזה?')) return;
     const updated = favorites.filter(f => f.id !== id);
     setFavorites(updated);
     localStorage.setItem('mealFavorites', JSON.stringify(updated));
   };
 
   const handleConfirmSubmit = async () => {
-    const toastId = toast.loading('שולח הזמנה...');
+    const toastId =       toast.loading(t('sendingOrder') || 'שולח הזמנה...');
     setTimeout(() => {
-        toast.success('ההזמנה התקבלה בהצלחה!', { id: toastId });
+        toast.success(t('orderReceivedSuccessfully') || 'ההזמנה התקבלה בהצלחה!', { id: toastId });
         setIsSummaryOpen(false);
     }, 1500);
   };
@@ -565,7 +567,7 @@ export default function MealOrdering() {
                          <p className="text-gray-500">תכנון ארוחות: {readableDate}</p>
                          <button onClick={() => setIsFeedbackOpen(true)} className="text-sm font-bold text-indigo-600 hover:bg-indigo-50 px-3 py-1 rounded-full flex items-center gap-1 transition-colors">
                              <Star size={16} className="fill-indigo-600" />
-                             דרג מנות משבוע שעבר
+                             {t('rateMealsFromLastWeek')}
                          </button>
                     </div>
                 </div>
@@ -595,7 +597,7 @@ export default function MealOrdering() {
                     <motion.div key="skipped" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="flex flex-col items-center justify-center py-20 text-center px-6">
                         <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4"><Sparkles className="text-gray-400" size={40} /></div>
                         <h3 className="text-xl font-bold mb-2">יום חופש נעים!</h3>
-                        <p className="text-gray-500 text-sm">היום הזה סומן כיום ללא ארוחה.</p>
+                        <p className="text-gray-500 text-sm">{t('thisDayMarkedAsNoMeal')}</p>
                     </motion.div>
                 ) : (
                     <motion.div key={activeDay} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="p-4 lg:px-0 space-y-8">
@@ -612,7 +614,7 @@ export default function MealOrdering() {
                             </div>
                         </section>
                         <section>
-                            <h2 className="text-lg font-black text-gray-900 mb-4 px-1">סלטים <span className="text-sm font-normal text-gray-400">(עד 2)</span></h2>
+                            <h2 className="text-lg font-black text-gray-900 mb-4 px-1">{t('salads')} <span className="text-sm font-normal text-gray-400">{t('upToTwo')}</span></h2>
                             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                                 {menuOptions.salads.map(item => (<SelectionCard key={item.id} item={item} isSelected={currentMeal.salad1 === item.name || currentMeal.salad2 === item.name} onToggle={(name) => handleSelection('salads', name)}/>))}
                             </div>

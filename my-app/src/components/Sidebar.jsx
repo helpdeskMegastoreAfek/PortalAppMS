@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   Menu,
   X,
@@ -19,39 +20,39 @@ import {
   ChartNoAxesCombined
 } from 'lucide-react';
 
-const appLinks = [
-  { label: 'Main Board', path: '/', icon: <LayoutDashboard size={20} /> },
-  { label: 'Meal Ordering', path: '/meal', icon: <Utensils size={20} /> },
+const getAppLinks = (t) => [
+  { label: t('mainBoard'), path: '/', icon: <LayoutDashboard size={20} /> },
+  { label: t('mealOrdering'), path: '/meal', icon: <Utensils size={20} /> },
   {
-    label: 'Box & Cooler Inventory',
+    label: t('boxCoolerInventory'),
     path: '/boxes',
     icon: <Package size={20} />,
   },
   {
-    label: 'Admin Box Inventory',
+    label: t('adminBoxInventory'),
     path: '/adminBox',
     icon: <PackageOpen size={20} />,
   },
-  { label: 'IT Support Tickets', path: '/it', icon: <Laptop2 size={20} /> },
-  { label: 'Statistics', path: '/statistics', icon: <ChartNoAxesCombined size={20} /> },
-  { label: 'Invoices', path: '/invoice', icon: <File size={20} /> },
+  { label: t('itSupportTickets'), path: '/it', icon: <Laptop2 size={20} /> },
+  { label: t('statistics'), path: '/statistics', icon: <ChartNoAxesCombined size={20} /> },
+  { label: t('invoices'), path: '/invoice', icon: <File size={20} /> },
   {
-    label: 'Scanner',
+    label: t('scanner'),
     path: '/invoiceUploader',
     icon: <Camera size={20} />,
   },
   {
-    label: 'Data Sync WMS',
+    label: t('dataSyncWMS'),
     path: '/DataSyncPage',
     icon: <RefreshCcw size={20} />,
   },
   {
-    label: 'Developer',
+    label: t('developer'),
     path: '/developer',
     icon: <Code size={20} />,
   },
   {
-    label: 'Admin Panel',
+    label: t('adminPanel'),
     path: '/admin',
     icon: <ShieldCheck size={20} />,
     adminOnly: true,
@@ -85,10 +86,12 @@ const NavLink = ({ item, collapsed, location, onLinkClick }) => (
 );
 
 export default function Sidebar({ user }) {
+  const { t } = useTranslation();
   const location = useLocation();
   const [open, setOpen] = useState(false); // mobile sidebar
   const [collapsed, setCollapsed] = useState(true); // desktop collapse
 
+  const appLinks = getAppLinks(t);
   const adminLink = appLinks.find((app) => app.adminOnly);
   const regularLinks = appLinks.filter((app) => !app.adminOnly);
 

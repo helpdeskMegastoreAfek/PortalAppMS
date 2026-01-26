@@ -1,6 +1,7 @@
 'use client';
 import toast, { Toaster } from 'react-hot-toast';
 import { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import Header from '../components/Header';
 import Sidebar from '../components/Sidebar';
 import {
@@ -109,6 +110,7 @@ function useStickyState(defaultValue, key) {
 }
 
 export default function BoxInventoryNew() {
+  const { t } = useTranslation();
   const user = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('user')) : null;
 
   // States
@@ -173,18 +175,18 @@ export default function BoxInventoryNew() {
       case 'replace': {
         const newBarcode = replacementBarcode.trim();
         if (!newBarcode) {
-          toast.error('יש לסרוק ברקוד להחלפה.');
+          toast.error(t('pleaseScanBarcodeForReplacement') || 'יש לסרוק ברקוד להחלפה.');
           return;
         }
         const isAlreadyScanned =
           scannedItems.some((item) => item.barcode === newBarcode) ||
           brokenScannedItems.some((item) => item.barcode === newBarcode);
         if (isAlreadyScanned) {
-          toast.error('הברקוד החדש כבר קיים ברשימה.');
+          toast.error(t('barcodeAlreadyExists'));
           return;
         }
         if (newBarcode === oldBarcode) {
-          toast.error('הברקוד החדש זהה לישן.');
+          toast.error(t('newBarcodeSameAsOld'));
           return;
         }
 
@@ -334,7 +336,7 @@ export default function BoxInventoryNew() {
 
   const handleSubmit = async () => {
     if (!user || !user.username) {
-      toast.error('שגיאה: עליך להיות מחובר כדי לשמור נתונים.');
+      toast.error(t('errorMustBeLoggedIn') || 'שגיאה: עליך להיות מחובר כדי לשמור נתונים.');
       return;
     }
     const finalVehicleNumber =
@@ -494,7 +496,7 @@ export default function BoxInventoryNew() {
                   <h1 className="text-2xl font-bold text-gray-800 mb-2">
                     שלום, {user?.fullName || user?.username}
                   </h1>
-                  <p className="text-gray-600 mb-8">בחר את סוג הפעולה כדי להתחיל.</p>
+                  <p className="text-gray-600 mb-8">{t('selectActionToStart')}</p>
                   <div className="grid grid-cols-1 gap-4">
                     <button
                       onClick={() => handleModeSelect('incoming')}
@@ -608,7 +610,7 @@ export default function BoxInventoryNew() {
                         htmlFor="barcode-adder-good"
                         className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2"
                       >
-                        <CheckCircle className="w-5 h-5 text-green-500" /> סרוק פריט תקין
+                        <CheckCircle className="w-5 h-5 text-green-500" /> {t('scanGoodItem')}
                       </label>
                       <form
                         onSubmit={(e) => {
@@ -624,7 +626,7 @@ export default function BoxInventoryNew() {
                           type="text"
                           value={barcodeToAdd}
                           onChange={(e) => setBarcodeToAdd(e.target.value)}
-                          placeholder="סרוק או הקלד ברקוד..."
+                          placeholder={t('scanOrTypeBarcode')}
                           className="flex-1 w-full px-3 py-2 border border-gray-300 rounded-md"
                           autoCorrect="off"
                           autoCapitalize="none"
@@ -636,7 +638,7 @@ export default function BoxInventoryNew() {
                         htmlFor="barcode-adder-broken"
                         className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2"
                       >
-                        <AlertTriangle className="w-5 h-5 text-red-500" /> סרוק פריט שבור
+                        <AlertTriangle className="w-5 h-5 text-red-500" /> {t('scanBrokenItem')}
                       </label>
                       <form
                         onSubmit={(e) => {
@@ -651,7 +653,7 @@ export default function BoxInventoryNew() {
                           type="text"
                           value={brokenBarcodeToAdd}
                           onChange={(e) => setBrokenBarcodeToAdd(e.target.value)}
-                          placeholder="סרוק או הקלד ברקוד..."
+                          placeholder={t('scanOrTypeBarcode')}
                           className="flex-1 w-full px-3 py-2 border border-gray-300 rounded-md"
                           autoCorrect="off"
                           autoCapitalize="none"
@@ -767,7 +769,7 @@ export default function BoxInventoryNew() {
                       className={`w-full flex items-center justify-center gap-2 py-3 text-sm font-semibold rounded-lg transition-all disabled:opacity-50 ${isConfirmingReset ? 'bg-orange-600 text-white hover:bg-orange-700' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
                     >
                       <RotateCcw className="w-4 h-4" />{' '}
-                      {isConfirmingReset ? 'לחץ שוב לאישור' : 'איפוס טופס'}
+                      {isConfirmingReset ? t('clickAgainToConfirm') : t('resetForm')}
                     </button>
                     <button
                       onClick={handleSubmit}
@@ -805,7 +807,7 @@ export default function BoxInventoryNew() {
                   </p>
                   <div className="space-y-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">בחר פעולה:</label>
+                      <label className="block text-sm font-medium text-gray-700">{t('selectAction')}</label>
                       <select
                         value={correctionReason}
                         onChange={(e) => setCorrectionReason(e.target.value)}
@@ -823,7 +825,7 @@ export default function BoxInventoryNew() {
                     {correctionReason === 'replace' && (
                       <div>
                         <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                          <Replace className="w-4 h-4 text-blue-500" /> סרוק קופסה חדשה
+                          <Replace className="w-4 h-4 text-blue-500" /> {t('scanNewBox')}
                         </label>
                         <form
                           onSubmit={(e) => {
@@ -836,7 +838,7 @@ export default function BoxInventoryNew() {
                             type="text"
                             value={replacementBarcode}
                             onChange={(e) => setReplacementBarcode(e.target.value)}
-                            placeholder="סרוק ברקוד להחלפה..."
+                            placeholder={t('scanBarcodeForReplacement')}
                             className="w-full p-2 border rounded-md mt-1 font-mono"
                             autoCorrect="off"
                             autoCapitalize="none"

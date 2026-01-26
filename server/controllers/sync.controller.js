@@ -98,22 +98,69 @@ const getSalesBySku = async (req, res) => {
     try {
         const endDateTime = `${endDate} 23:59:59`;
         
-        const sqlQuery = `
-            SELECT locat_code, sku_id as skuId, sku_id as guid, qty as accesQty
-            FROM (
-                SELECT a.sku_id, SUM(a.picked_qty_each) qty, e.locat_code
-                FROM doc_alloc_details a
-                INNER JOIN bas_wharea c ON a.work_area_id = c.wh_area_id
-                INNER JOIN bas_sku d ON a.sku_id = d.sku_id
-                LEFT JOIN bas_location e ON a.locat_id = e.locat_id
-                WHERE a.create_at BETWEEN ? AND ?
-                AND d.stock_env = ?
-                GROUP BY a.sku_id, e.locat_code
-                ORDER BY qty DESC
-            ) temp
-        `;
+        let sqlQuery;
+        let params;
 
-        const [results] = await mysqlPool.query(sqlQuery, [startDate, endDateTime, stockEnv]);
+        // אם stockEnv הוא 'AGV', נכלול את כל ה-Location Codes שמתחילים ב-AGV
+        if (stockEnv === 'AGV') {
+            sqlQuery = `
+                SELECT COALESCE(GROUP_CONCAT(DISTINCT locat_code ORDER BY locat_code SEPARATOR ', '), 'N/A') as locat_code, 
+                       sku_id as skuId, sku_id as guid, SUM(qty) as accesQty, sku_name
+                FROM (
+                    SELECT a.sku_id, SUM(a.picked_qty_each) qty, e.locat_code, d.sku_name
+                    FROM doc_alloc_details a
+                    INNER JOIN bas_wharea c ON a.work_area_id = c.wh_area_id
+                    INNER JOIN bas_sku d ON a.sku_id = d.sku_id
+                    LEFT JOIN bas_location e ON a.locat_id = e.locat_id
+                    WHERE a.create_at BETWEEN ? AND ?
+                    AND e.locat_code LIKE 'AGV%'
+                    GROUP BY a.sku_id, e.locat_code, d.sku_name
+                ) temp
+                GROUP BY sku_id, sku_name
+                ORDER BY accesQty DESC
+            `;
+            params = [startDate, endDateTime];
+        } else if (stockEnv === 'BULK') {
+            // אם stockEnv הוא 'BULK', נכלול את כל ה-Location Codes שמתחילים ב-MJ
+            sqlQuery = `
+                SELECT COALESCE(GROUP_CONCAT(DISTINCT locat_code ORDER BY locat_code SEPARATOR ', '), 'N/A') as locat_code, 
+                       sku_id as skuId, sku_id as guid, SUM(qty) as accesQty, sku_name
+                FROM (
+                    SELECT a.sku_id, SUM(a.picked_qty_each) qty, e.locat_code, d.sku_name
+                    FROM doc_alloc_details a
+                    INNER JOIN bas_wharea c ON a.work_area_id = c.wh_area_id
+                    INNER JOIN bas_sku d ON a.sku_id = d.sku_id
+                    LEFT JOIN bas_location e ON a.locat_id = e.locat_id
+                    WHERE a.create_at BETWEEN ? AND ?
+                    AND e.locat_code LIKE 'MJ%'
+                    GROUP BY a.sku_id, e.locat_code, d.sku_name
+                ) temp
+                GROUP BY sku_id, sku_name
+                ORDER BY accesQty DESC
+            `;
+            params = [startDate, endDateTime];
+        } else {
+            sqlQuery = `
+                SELECT COALESCE(GROUP_CONCAT(DISTINCT locat_code ORDER BY locat_code SEPARATOR ', '), 'N/A') as locat_code, 
+                       sku_id as skuId, sku_id as guid, SUM(qty) as accesQty, sku_name
+                FROM (
+                    SELECT a.sku_id, SUM(a.picked_qty_each) qty, e.locat_code, d.sku_name
+                    FROM doc_alloc_details a
+                    INNER JOIN bas_wharea c ON a.work_area_id = c.wh_area_id
+                    INNER JOIN bas_sku d ON a.sku_id = d.sku_id
+                    LEFT JOIN bas_location e ON a.locat_id = e.locat_id
+                    WHERE a.create_at BETWEEN ? AND ?
+                    AND d.stock_env = ?
+                    AND (e.locat_code IS NULL OR (e.locat_code NOT LIKE 'AGV%' AND e.locat_code NOT LIKE 'MJ%'))
+                    GROUP BY a.sku_id, e.locat_code, d.sku_name
+                ) temp
+                GROUP BY sku_id, sku_name
+                ORDER BY accesQty DESC
+            `;
+            params = [startDate, endDateTime, stockEnv];
+        }
+
+        const [results] = await mysqlPool.query(sqlQuery, params);
         res.status(200).json(results);
     } catch (error) {
         console.error('Error fetching sales by SKU:', error);
@@ -122,8 +169,37 @@ const getSalesBySku = async (req, res) => {
 };
 
 
+const getCancelledOrders = async (req, res) => {
+    const { startDate, endDate } = req.query;
+
+    if (!startDate || !endDate) {
+        return res.status(400).json({ message: 'Missing startDate or endDate parameters' });
+    }
+
+    try {
+        const endDateTime = `${endDate} 23:59:59`;
+        
+        const sqlQuery = `
+            SELECT * 
+            FROM doc_so_master 
+            WHERE (so_cancel_flag = 1 OR so_cancel_status = 1)
+            AND create_at BETWEEN ? AND ?
+            ORDER BY create_at DESC
+        `;
+        
+        const params = [startDate, endDateTime];
+        const [results] = await mysqlPool.query(sqlQuery, params);
+        
+        res.status(200).json(results);
+    } catch (error) {
+        console.error('Error fetching cancelled orders:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
 module.exports = {
     syncInvoicesToMongo,
     updateSyncedInvoice,
-    getSalesBySku
+    getSalesBySku,
+    getCancelledOrders
 };

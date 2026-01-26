@@ -10,4 +10,6 @@ router.put('/synced-invoices/:so_no', updateSyncedInvoice);
 
 router.get('/sales-by-sku', syncController.getSalesBySku);
 
+router.get('/cancelled-orders', syncController.getCancelledOrders);
+
 module.exports = router;

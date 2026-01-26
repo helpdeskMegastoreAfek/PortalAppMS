@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { LogOut, User, Lock, Languages } from 'lucide-react';
 import ChangePasswordModal from './ChangePasswordModal';
 import { useTranslation } from 'react-i18next';
@@ -9,6 +10,7 @@ export default function Header({ user }) {
   const [showModal, setShowModal] = useState(false);
   const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
   const { t, i18n } = useTranslation();
+  const navigate = useNavigate();
 
   const menuRef = useRef(null);
 
@@ -91,9 +93,51 @@ export default function Header({ user }) {
 
           {/* כפתור התנתקות - רק אייקון */}
           <button
-            onClick={() => {
+            onClick={async () => {
+              try {
+                const token = localStorage.getItem('token');
+                const API_URL = import.meta.env.VITE_API_URL || 'http://172.20.0.49:3000';
+                
+                // Logout from server (terminate session)
+                if (token) {
+                  try {
+                    const response = await fetch(`${API_URL}/api/sessions/logout`, {
+                      method: 'POST',
+                      headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'x-auth-token': token,
+                        'Content-Type': 'application/json'
+                      }
+                    });
+                    
+                    if (!response.ok) {
+                      console.warn('Logout API call failed, but continuing with client-side logout');
+                    }
+                  } catch (fetchError) {
+                    // Continue with logout even if server call fails
+                    console.warn('Failed to contact server for logout:', fetchError);
+                  }
+                }
+              } catch (error) {
+                console.error('Logout error:', error);
+              }
+              
+              // Always clear local storage FIRST, before redirect
               localStorage.removeItem('user');
-              window.location.href = '/login';
+              localStorage.removeItem('token');
+              
+              // Clear any other auth-related items
+              localStorage.removeItem('rememberedUsername');
+              localStorage.removeItem('rememberMe');
+              
+              // Force redirect to login page using React Router
+              // Using replace to prevent back button from returning to protected pages
+              navigate('/login', { replace: true });
+              
+              // Force a page reload to clear any cached state
+              setTimeout(() => {
+                window.location.reload();
+              }, 100);
             }}
             className="flex items-center text-sm text-gray-600 hover:text-gray-900 transition-colors"
             title={t('logout')}

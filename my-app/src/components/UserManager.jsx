@@ -29,6 +29,7 @@ import {
   Grid3x3,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -49,6 +50,7 @@ function PermissionSwitch({ name, checked, onChange, label, className = '' }) {
 }
 
 export default function UsersTable({ refreshTrigger, appOptions }) {
+  const { t } = useTranslation();
   const [users, setUsers] = useState([]);
   const [search, setSearch] = useState('');
   const [filterRole, setFilterRole] = useState('');
@@ -92,7 +94,7 @@ export default function UsersTable({ refreshTrigger, appOptions }) {
         setLoading(false);
       })
       .catch(() => {
-        toast.error('Failed to load users');
+        toast.error(t('failedToLoadUsers') || 'Failed to load users');
         setLoading(false);
       });
   }, [refreshTrigger]);
@@ -111,13 +113,13 @@ export default function UsersTable({ refreshTrigger, appOptions }) {
 
   const exportToCSV = () => {
     if (filtered.length === 0) {
-      toast.error('No users to export');
+      toast.error(t('noUsersToExport'));
       return;
     }
     const csv = Papa.unparse(filtered);
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     saveAs(blob, 'users_export.csv');
-    toast.success(`Exported ${filtered.length} users to CSV`);
+    toast.success(t('exportedUsersToCSV') || `Exported ${filtered.length} users to CSV`);
   };
 
   const handleSaveEdit = async () => {
@@ -131,13 +133,13 @@ export default function UsersTable({ refreshTrigger, appOptions }) {
         const updated = await res.json();
         setUsers((prev) => prev.map((user) => (user._id === updated._id ? updated : user)));
         setEditingUser(null);
-        toast.success('User updated successfully');
+        toast.success(t('userUpdatedSuccessfully'));
       } else {
         const error = await res.json();
-        toast.error(error.message || 'Failed to update user');
+        toast.error(error.message || t('failedToUpdateUser'));
       }
     } catch {
-      toast.error('Failed to update user');
+      toast.error(t('failedToUpdateUser'));
     }
   };
 
@@ -146,8 +148,8 @@ export default function UsersTable({ refreshTrigger, appOptions }) {
     if (userToDelete.role === 'admin') {
       const adminCount = users.filter((u) => u.role === 'admin').length;
       if (adminCount <= 1) {
-        setErrorMsg('The last admin in the system cannot be deleted!');
-        toast.error('The last admin in the system cannot be deleted!');
+        setErrorMsg(t('lastAdminCannotBeDeleted'));
+        toast.error(t('lastAdminCannotBeDeleted'));
         return;
       }
     }
@@ -160,12 +162,12 @@ export default function UsersTable({ refreshTrigger, appOptions }) {
       if (res.ok) {
         setUsers(users.filter((u) => u._id !== id));
         setConfirmDelete(null);
-        toast.success('User deleted successfully');
+        toast.success(t('userDeletedSuccessfully'));
       } else {
-        toast.error('Failed to delete user');
+        toast.error(t('failedToDeleteUser'));
       }
     } catch {
-      toast.error('Failed to delete user');
+      toast.error(t('failedToDeleteUser'));
     }
   };
 
@@ -192,7 +194,7 @@ export default function UsersTable({ refreshTrigger, appOptions }) {
       setTempPassword(json.tempPassword || json.temp_password || '');
     } catch (err) {
       console.error(err);
-      setErrorReset('שגיאה באיפוס הסיסמה');
+      setErrorReset(t('passwordResetError'));
     } finally {
       setLoadingReset(false);
     }
@@ -207,8 +209,8 @@ export default function UsersTable({ refreshTrigger, appOptions }) {
             <Users className="w-5 h-5 text-blue-600" />
           </div>
           <div>
-            <h1 className="text-2xl font-semibold text-gray-900">User Management</h1>
-            <p className="text-sm text-gray-600 mt-1">Manage and organize your team members</p>
+            <h1 className="text-2xl font-semibold text-gray-900">{t('userManagement')}</h1>
+            <p className="text-sm text-gray-600 mt-1">{t('manageOrganizeTeamMembers')}</p>
           </div>
         </div>
       </div>
@@ -223,7 +225,7 @@ export default function UsersTable({ refreshTrigger, appOptions }) {
               </div>
               <input
                 type="text"
-                placeholder="Search users..."
+                placeholder={t('searchUsers')}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 transition-colors text-sm"
@@ -239,10 +241,10 @@ export default function UsersTable({ refreshTrigger, appOptions }) {
                 onChange={(e) => setFilterRole(e.target.value)}
                 className="pl-9 pr-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 bg-white transition-colors text-sm appearance-none cursor-pointer"
               >
-                <option value="">All Roles</option>
-                <option value="admin">Admin</option>
-                <option value="user">User</option>
-                <option value="developer">Developer</option>
+                <option value="">{t('allRoles')}</option>
+                <option value="admin">{t('admin')}</option>
+                <option value="user">{t('userRole')}</option>
+                <option value="developer">{t('developer')}</option>
               </select>
             </div>
 
@@ -255,9 +257,9 @@ export default function UsersTable({ refreshTrigger, appOptions }) {
                 onChange={(e) => setFilterStatus(e.target.value)}
                 className="pl-9 pr-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 bg-white transition-colors text-sm appearance-none cursor-pointer"
               >
-                <option value="">All Statuses</option>
-                <option value="Active">Active</option>
-                <option value="Disable">Disabled</option>
+                <option value="">{t('allStatuses')}</option>
+                <option value="Active">{t('active')}</option>
+                <option value="Disable">{t('disabled')}</option>
               </select>
             </div>
           </div>
@@ -267,7 +269,7 @@ export default function UsersTable({ refreshTrigger, appOptions }) {
             className="inline-flex items-center gap-2 px-4 py-2.5 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-all shadow-sm hover:shadow-md"
           >
             <Download className="w-4 h-4" />
-            <span>Export CSV</span>
+            <span>{t('exportCSV')}</span>
           </button>
         </div>
       </div>
@@ -275,8 +277,8 @@ export default function UsersTable({ refreshTrigger, appOptions }) {
       {/* Results Summary */}
       <div className="mb-4 flex items-center justify-between">
         <p className="text-sm text-gray-600">
-          Showing <span className="font-semibold text-gray-900">{filtered.length}</span> of{' '}
-          <span className="font-semibold text-gray-900">{users.length}</span> users
+          {t('showing')} <span className="font-semibold text-gray-900">{filtered.length}</span> {t('of')}{' '}
+          <span className="font-semibold text-gray-900">{users.length}</span> {t('users')}
         </p>
         {(search || filterRole || filterStatus) && (
           <button
@@ -288,7 +290,7 @@ export default function UsersTable({ refreshTrigger, appOptions }) {
             className="text-xs text-gray-600 hover:text-gray-900 flex items-center gap-1"
           >
             <X className="w-3 h-3" />
-            Clear filters
+            {t('clearFilters')}
           </button>
         )}
       </div>
@@ -298,16 +300,16 @@ export default function UsersTable({ refreshTrigger, appOptions }) {
         {loading ? (
           <div className="flex items-center justify-center py-12">
             <Loader2 className="w-8 h-8 text-gray-400 animate-spin" />
-            <span className="ml-3 text-gray-600">Loading users...</span>
+            <span className="ml-3 text-gray-600">{t('loadingUsers')}</span>
           </div>
         ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 px-4">
             <Users className="w-16 h-16 text-gray-300 mb-4" />
-            <p className="text-lg font-medium text-gray-900 mb-2">No users found</p>
+            <p className="text-lg font-medium text-gray-900 mb-2">{t('noUsersFound')}</p>
             <p className="text-sm text-gray-600 text-center">
               {search || filterRole || filterStatus
-                ? 'Try adjusting your filters to see more results'
-                : 'No users available'}
+                ? t('tryAdjustingFiltersUsers')
+                : t('noUsersAvailable')}
             </p>
           </div>
         ) : (
@@ -316,25 +318,25 @@ export default function UsersTable({ refreshTrigger, appOptions }) {
               <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
                 <tr>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                    User
+                    {t('user')}
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                    Email
+                    {t('email')}
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                    Status
+                    {t('status')}
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                    Role
+                    {t('role')}
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                    Updated
+                    {t('updated')}
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                    Org Unit
+                    {t('orgUnit')}
                   </th>
                   <th className="px-6 py-4 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                    Actions
+                    {t('actions')}
                   </th>
                 </tr>
               </thead>
@@ -399,10 +401,10 @@ export default function UsersTable({ refreshTrigger, appOptions }) {
                       <button
                         onClick={() => openResetModal(u)}
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-orange-700 bg-orange-50 rounded-lg hover:bg-orange-100 focus:ring-2 focus:ring-orange-500 focus:ring-offset-1 transition-all border border-orange-200"
-                        title="Reset password"
+                        title={t('resetPassword')}
                       >
                         <Key className="w-3.5 h-3.5" />
-                        <span className="hidden sm:inline">Reset</span>
+                        <span className="hidden sm:inline">{t('reset')}</span>
                       </button>
                       <button
                         onClick={() => {
@@ -410,18 +412,18 @@ export default function UsersTable({ refreshTrigger, appOptions }) {
                           setEditedData(u);
                         }}
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-700 bg-blue-50 rounded-lg hover:bg-blue-100 focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 transition-all border border-blue-200"
-                        title="Edit user"
+                        title={t('editUser')}
                       >
                         <Edit className="w-3.5 h-3.5" />
-                        <span className="hidden sm:inline">Edit</span>
+                        <span className="hidden sm:inline">{t('edit')}</span>
                       </button>
                       <button
                         onClick={() => setConfirmDelete(u)}
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-700 bg-red-50 rounded-lg hover:bg-red-100 focus:ring-2 focus:ring-red-500 focus:ring-offset-1 transition-all border border-red-200"
-                        title="Delete user"
+                        title={t('delete')}
                       >
                         <Trash2 className="w-3.5 h-3.5" />
-                        <span className="hidden sm:inline">Delete</span>
+                        <span className="hidden sm:inline">{t('delete')}</span>
                       </button>
                     </div>
                   </td>
@@ -445,10 +447,10 @@ export default function UsersTable({ refreshTrigger, appOptions }) {
                   </div>
                   <div>
                     <h2 className="text-xl font-semibold text-white">
-                      Edit User: {editingUser.username}
+                      {t('editUserTitle')}: {editingUser.username}
                     </h2>
                     <p className="text-sm text-gray-300 mt-0.5">
-                      Update user information and permissions
+                      {t('updateUserInformationPermissions')}
                     </p>
                   </div>
                 </div>
@@ -468,14 +470,14 @@ export default function UsersTable({ refreshTrigger, appOptions }) {
                   <div className="flex items-center gap-2 mb-4 pb-2 border-b border-gray-200">
                     <UserCheck className="w-4 h-4 text-gray-600" />
                     <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">
-                      Basic Information
+                      {t('basicInformation')}
                     </h3>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                        <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
                         <UserCheck className="w-4 h-4 text-gray-500" />
-                        Username
+                        {t('username')}
                       </label>
                       <input
                         type="text"
@@ -486,9 +488,9 @@ export default function UsersTable({ refreshTrigger, appOptions }) {
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                        <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
                         <FileText className="w-4 h-4 text-gray-500" />
-                        Email
+                        {t('email')}
                       </label>
                       <input
                         type="email"
@@ -506,12 +508,12 @@ export default function UsersTable({ refreshTrigger, appOptions }) {
                   <div className="flex items-center gap-2 mb-4 pb-2 border-b border-gray-200">
                     <Shield className="w-4 h-4 text-gray-600" />
                     <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">
-                      Role & Status
+                      {t('roleStatus')}
                     </h3>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <label className="block text-sm font-medium text-gray-700">Status</label>
+                      <label className="block text-sm font-medium text-gray-700">{t('status')}</label>
                       <div className="relative">
                         <select
                           value={editedData.status}
@@ -535,13 +537,13 @@ export default function UsersTable({ refreshTrigger, appOptions }) {
                         )}
                         <span className="text-xs text-gray-500">
                           {editedData.status === 'Active'
-                            ? 'User can login'
-                            : 'User access disabled'}
+                            ? t('userCanLoginStatus')
+                            : t('userAccessDisabled')}
                         </span>
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <label className="block text-sm font-medium text-gray-700">Role</label>
+                      <label className="block text-sm font-medium text-gray-700">{t('role')}</label>
                       <div className="relative">
                         <select
                           value={editedData.role}
@@ -565,12 +567,12 @@ export default function UsersTable({ refreshTrigger, appOptions }) {
                   <div className="flex items-center gap-2 mb-4 pb-2 border-b border-gray-200">
                     <Building2 className="w-4 h-4 text-gray-600" />
                     <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">
-                      Organization
+                      {t('organization')}
                     </h3>
                   </div>
                   <div className="space-y-2">
                     <label className="block text-sm font-medium text-gray-700">
-                      Organization Unit
+                      {t('orgUnit')}
                     </label>
                     <input
                       type="text"
@@ -590,12 +592,12 @@ export default function UsersTable({ refreshTrigger, appOptions }) {
                 <div className="flex items-center gap-2 mb-4 pb-2 border-b border-gray-200">
                   <Grid3x3 className="w-4 h-4 text-gray-600" />
                   <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">
-                    Allowed Applications
+                    {t('allowedApplications')}
                   </h3>
                 </div>
                 <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
                   <p className="text-xs text-gray-600 mb-4">
-                    Select which applications this user can access
+                    {t('selectApplicationsUserCanAccess')}
                   </p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-64 overflow-y-auto scrollbar-thin">
                     {appOptions.map((app) => {
@@ -648,7 +650,7 @@ export default function UsersTable({ refreshTrigger, appOptions }) {
                     <div className="flex items-center gap-2 mb-4">
                       <FileText className="w-4 h-4 text-blue-700" />
                       <h3 className="text-sm font-semibold text-blue-900 uppercase tracking-wide">
-                        Invoice Panel Permissions
+                        {t('invoicePanelPermissions')}
                       </h3>
                     </div>
                     <div className="space-y-3">
@@ -658,7 +660,7 @@ export default function UsersTable({ refreshTrigger, appOptions }) {
                             name="viewFinancials"
                             checked={permissions.viewFinancials}
                             onChange={handlePermissionChange}
-                            label="View financial summary"
+                            label={t('viewFinancialSummary')}
                           />
                         </div>
                         <div className="bg-white p-3 rounded-lg border border-blue-200">
@@ -666,7 +668,7 @@ export default function UsersTable({ refreshTrigger, appOptions }) {
                             name="editInvoices"
                             checked={permissions.editInvoices}
                             onChange={handlePermissionChange}
-                            label="Edit invoices"
+                            label={t('editInvoices')}
                           />
                         </div>
                         <div className="bg-white p-3 rounded-lg border border-blue-200">
@@ -674,7 +676,7 @@ export default function UsersTable({ refreshTrigger, appOptions }) {
                             name="undoInvoice"
                             checked={permissions.undoInvoice}
                             onChange={handlePermissionChange}
-                            label="Undo invoices"
+                            label={t('undoInvoices')}
                           />
                         </div>
                         <div className="bg-white p-3 rounded-lg border border-blue-200">
@@ -682,7 +684,7 @@ export default function UsersTable({ refreshTrigger, appOptions }) {
                             name="csvExport"
                             checked={permissions.csvExport}
                             onChange={handlePermissionChange}
-                            label="Export CSV"
+                            label={t('exportCSVPermission')}
                           />
                         </div>
                         <div className="bg-white p-3 rounded-lg border border-blue-200">
@@ -690,7 +692,7 @@ export default function UsersTable({ refreshTrigger, appOptions }) {
                             name="deleteInvoices"
                             checked={permissions.deleteInvoices}
                             onChange={handlePermissionChange}
-                            label="Delete invoices (Only Developers)"
+                            label={t('deleteInvoices')}
                           />
                         </div>
                       </FormGroup>
@@ -705,14 +707,14 @@ export default function UsersTable({ refreshTrigger, appOptions }) {
                 onClick={() => setEditingUser(null)}
                 className="px-6 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-all"
               >
-                Cancel
+                {t('cancel')}
               </button>
               <button
                 onClick={handleSaveEdit}
                 className="px-6 py-2.5 text-sm font-medium text-white bg-gray-900 rounded-lg hover:bg-gray-800 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-all shadow-sm hover:shadow-md flex items-center gap-2"
               >
                 <CheckCircle2 className="w-4 h-4" />
-                Save Changes
+                {t('saveChanges')}
               </button>
             </div>
           </div>
@@ -744,7 +746,7 @@ export default function UsersTable({ refreshTrigger, appOptions }) {
                     disabled={loadingReset}
                     className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:opacity-50"
                   >
-                    {loadingReset ? 'Create' : 'Reset Password'}
+                    {loadingReset ? t('create') : t('resetPassword')}
                   </button>
                 </div>
               </>
@@ -757,9 +759,9 @@ export default function UsersTable({ refreshTrigger, appOptions }) {
                         <CheckCircle2 className="w-5 h-5 text-white" />
                       </div>
                       <div>
-                        <h2 className="text-lg font-semibold text-white">Password Reset</h2>
+                        <h2 className="text-lg font-semibold text-white">{t('passwordReset')}</h2>
                         <p className="text-sm text-green-100 mt-0.5">
-                          Temporary password for {resetUser?.username}
+                          {t('temporaryPasswordFor')} {resetUser?.username}
                         </p>
                       </div>
                     </div>
@@ -791,7 +793,7 @@ export default function UsersTable({ refreshTrigger, appOptions }) {
                     </button>
                   </div>
                   <p className="text-sm text-gray-600 mt-4 text-center">
-                    Share this password with the user. It is valid until they change it.
+                    {t('sharePasswordWithUser')}
                   </p>
                   <div className="mt-6 flex justify-end">
                     <button
@@ -802,7 +804,7 @@ export default function UsersTable({ refreshTrigger, appOptions }) {
                       }}
                       className="px-6 py-2.5 text-sm font-medium text-white bg-gray-900 rounded-lg hover:bg-gray-800 transition-all"
                     >
-                      Done
+                      {t('done')}
                     </button>
                   </div>
                 </div>
@@ -823,9 +825,9 @@ export default function UsersTable({ refreshTrigger, appOptions }) {
                     <AlertCircle className="w-5 h-5 text-white" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-semibold text-white">Delete User</h3>
+                    <h3 className="text-lg font-semibold text-white">{t('deleteUser')}</h3>
                     <p className="text-sm text-red-100 mt-0.5">
-                      This action cannot be undone
+                      {t('thisActionCannotBeUndone')}
                     </p>
                   </div>
                 </div>
@@ -843,9 +845,8 @@ export default function UsersTable({ refreshTrigger, appOptions }) {
 
             <div className="px-6 py-6">
               <p className="text-sm text-gray-700 mb-4">
-                Are you sure you want to delete{' '}
-                <span className="font-semibold text-gray-900">{confirmDelete.username}</span>? This
-                action cannot be undone.
+                {t('areYouSureDeleteUser')}{' '}
+                <span className="font-semibold text-gray-900">{confirmDelete.username}</span>{t('thisActionCannotBeUndoneFull')}
               </p>
 
               {errorMsg && (
@@ -863,14 +864,14 @@ export default function UsersTable({ refreshTrigger, appOptions }) {
                   }}
                   className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-all"
                 >
-                  Cancel
+                  {t('cancel')}
                 </button>
                 <button
                   onClick={() => handleDelete(confirmDelete._id)}
                   className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-all flex items-center gap-2"
                 >
                   <Trash2 className="w-4 h-4" />
-                  <span>Delete User</span>
+                  <span>{t('deleteUser')}</span>
                 </button>
               </div>
             </div>

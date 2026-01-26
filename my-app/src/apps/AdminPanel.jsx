@@ -22,6 +22,7 @@ import Header from '../components/Header';
 import Sidebar from '../components/Sidebar';
 import toast, { Toaster } from 'react-hot-toast';
 import { Switch, FormControlLabel, FormGroup } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -42,6 +43,7 @@ function PermissionSwitch({ name, checked, onChange, label, className = '' }) {
 }
 
 export default function AdminPanel() {
+  const { t } = useTranslation();
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -65,17 +67,17 @@ export default function AdminPanel() {
   }
 
   const appOptions = [
-    { label: 'Main Board (sidebar)', value: '/' },
-    { label: 'Meal Ordering', value: '/meal' },
-    { label: 'Box & Cooler Inventory', value: '/boxes' },
-    { label: 'IT Support Tickets', value: '/it' },
+    { label: t('mainBoard'), value: '/' },
+    { label: t('mealOrdering'), value: '/meal' },
+    { label: t('boxCoolerInventory'), value: '/boxes' },
+    { label: t('itSupportTickets'), value: '/it' },
     { label: 'Service Tickets', value: '/service' },
-    { label: 'Admin Box Inventory', value: '/adminBox' },
-    { label: 'Invoice Panel', value: '/invoice' },
-    { label: 'Statistics Panel', value: '/statistics' },
-    { label: 'Data Sync WMS Panel', value: '/DataSyncPage' },
-    { label: 'Developer', value: '/developer' },
-    { label: 'Admin Panel', value: '/admin' },
+    { label: t('adminBoxInventory'), value: '/adminBox' },
+    { label: t('invoices'), value: '/invoice' },
+    { label: t('statistics'), value: '/statistics' },
+    { label: t('dataSyncWMS'), value: '/DataSyncPage' },
+    { label: t('developer'), value: '/developer' },
+    { label: t('adminPanel'), value: '/admin' },
   ];
 
   const toggleApp = (value) => {
@@ -91,7 +93,7 @@ export default function AdminPanel() {
 
   const handleSubmit = async () => {
     if (!username || !password || !email) {
-      toast.error('Please fill all required fields.');
+      toast.error(t('pleaseFillAllRequiredFields'));
       return;
     }
 
@@ -132,12 +134,12 @@ export default function AdminPanel() {
           undoInvoice: false,
           deleteInvoices: false,
         });
-        return 'User created successfully!';
+        return t('userCreatedSuccessfully');
       }),
       {
-        loading: 'Creating user...',
+        loading: t('creatingUser'),
         success: (msg) => msg,
-        error: (err) => `Error: ${err.message}`,
+        error: (err) => `${t('errorCreatingUser')}: ${err.message}`,
       }
     );
   };
@@ -155,9 +157,9 @@ export default function AdminPanel() {
             <div className="p-2 bg-gray-900 rounded-lg">
               <Shield className="w-6 h-6 text-white" />
             </div>
-            <h1 className="text-3xl font-semibold text-gray-900">Admin Panel</h1>
+            <h1 className="text-3xl font-semibold text-gray-900">{t('adminPanelTitle')}</h1>
           </div>
-          <p className="text-gray-600 ml-14">Manage users, permissions, and access controls</p>
+          <p className="text-gray-600 ml-14">{t('manageUsersPermissions')}</p>
         </div>
 
         {/* Toggle Button */}
@@ -173,12 +175,12 @@ export default function AdminPanel() {
             {showForm ? (
               <>
                 <ChevronsUp size={18} />
-                <span>Hide Form</span>
+                <span>{t('hideForm')}</span>
               </>
             ) : (
               <>
                 <UserPlus size={18} />
-                <span>Add New User</span>
+                <span>{t('addNewUser')}</span>
               </>
             )}
           </Button>
@@ -190,7 +192,7 @@ export default function AdminPanel() {
             <div className="bg-gradient-to-r from-gray-900 to-gray-800 px-6 py-4 border-b border-gray-200">
               <div className="flex items-center gap-3">
                 <UserPlus className="w-5 h-5 text-white" />
-                <h2 className="text-lg font-semibold text-white">Add New User</h2>
+                <h2 className="text-lg font-semibold text-white">{t('addNewUser')}</h2>
               </div>
             </div>
 
@@ -200,28 +202,28 @@ export default function AdminPanel() {
                 <div className="flex items-center gap-2 mb-4 pb-2 border-b border-gray-200">
                   <UserIcon className="w-4 h-4 text-gray-600" />
                   <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">
-                    Basic Information
+                    {t('basicInformation')}
                   </h3>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
                       <UserIcon className="w-4 h-4 text-gray-500" />
-                      Username <span className="text-red-500">*</span>
+                      {t('username')} <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="text"
                       value={username}
                       onChange={(e) => setUsername(e.target.value)}
                       className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all"
-                      placeholder="Enter username"
+                      placeholder={t('enterUsername')}
                     />
                   </div>
 
                   <div className="space-y-2">
                     <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
                       <Mail className="w-4 h-4 text-gray-500" />
-                      Email <span className="text-red-500">*</span>
+                      {t('email')} <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="email"
@@ -236,14 +238,14 @@ export default function AdminPanel() {
                 <div className="mt-6 space-y-2">
                   <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
                     <Lock className="w-4 h-4 text-gray-500" />
-                    Password <span className="text-red-500">*</span>
+                    {t('password')} <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all"
-                    placeholder="Enter password"
+                    placeholder={t('enterPassword')}
                   />
                 </div>
               </div>
@@ -253,21 +255,21 @@ export default function AdminPanel() {
                 <div className="flex items-center gap-2 mb-4 pb-2 border-b border-gray-200">
                   <Shield className="w-4 h-4 text-gray-600" />
                   <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">
-                    Role & Status
+                    {t('roleStatus')}
                   </h3>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700">Role</label>
+                    <label className="block text-sm font-medium text-gray-700">{t('role')}</label>
                     <div className="relative">
                       <select
                         value={role}
                         onChange={(e) => setRole(e.target.value)}
                         className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all appearance-none bg-white cursor-pointer"
                       >
-                        <option value="user">User</option>
-                        <option value="admin">Admin</option>
-                        <option value="developer">Developer</option>
+                        <option value="user">{t('userRole')}</option>
+                        <option value="admin">{t('admin')}</option>
+                        <option value="developer">{t('developer')}</option>
                       </select>
                       <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
                         <ChevronsDown className="w-4 h-4 text-gray-400" />
@@ -276,15 +278,15 @@ export default function AdminPanel() {
                   </div>
 
                   <div className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700">Status</label>
+                    <label className="block text-sm font-medium text-gray-700">{t('status')}</label>
                     <div className="relative">
                       <select
                         value={status}
                         onChange={(e) => setStatus(e.target.value)}
                         className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all appearance-none bg-white cursor-pointer"
                       >
-                        <option value="Active">Active</option>
-                        <option value="Disable">Disable</option>
+                        <option value="Active">{t('active')}</option>
+                        <option value="Disable">{t('disable')}</option>
                       </select>
                       <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
                         <ChevronsDown className="w-4 h-4 text-gray-400" />
@@ -297,7 +299,7 @@ export default function AdminPanel() {
                         <XCircle className="w-4 h-4 text-red-600" />
                       )}
                       <span className="text-xs text-gray-500">
-                        {status === 'Active' ? 'User will be able to login' : 'User access disabled'}
+                        {status === 'Active' ? t('userCanLogin') : t('userAccessDisabled')}
                       </span>
                     </div>
                   </div>
@@ -309,12 +311,12 @@ export default function AdminPanel() {
                 <div className="flex items-center gap-2 mb-4 pb-2 border-b border-gray-200">
                   <Building2 className="w-4 h-4 text-gray-600" />
                   <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">
-                    Organization
+                    {t('organization')}
                   </h3>
                 </div>
                 <div className="space-y-2">
                   <label className="block text-sm font-medium text-gray-700">
-                    Organization Unit
+                    {t('orgUnit')}
                   </label>
                   <input
                     type="text"
@@ -323,7 +325,7 @@ export default function AdminPanel() {
                     className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all"
                     placeholder="/IT/Support"
                   />
-                  <p className="text-xs text-gray-500 mt-1">Optional: Specify the organizational unit</p>
+                  <p className="text-xs text-gray-500 mt-1">{t('optionalSpecifyOrgUnit')}</p>
                 </div>
               </div>
 
@@ -332,12 +334,12 @@ export default function AdminPanel() {
                 <div className="flex items-center gap-2 mb-4 pb-2 border-b border-gray-200">
                   <Grid3x3 className="w-4 h-4 text-gray-600" />
                   <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">
-                    Allowed Applications
+                    {t('allowedApplications')}
                   </h3>
                 </div>
                 <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
                   <p className="text-xs text-gray-600 mb-4">
-                    Select which applications this user can access
+                    {t('selectApplicationsUserCanAccess')}
                   </p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                     {appOptions.map((app) => {
@@ -373,7 +375,7 @@ export default function AdminPanel() {
                   <div className="flex items-center gap-2 mb-4">
                     <FileText className="w-4 h-4 text-blue-700" />
                     <h3 className="text-sm font-semibold text-blue-900 uppercase tracking-wide">
-                      Invoice Panel Permissions
+                      {t('invoicePanelPermissions')}
                     </h3>
                   </div>
                   <div className="space-y-3">
@@ -383,7 +385,7 @@ export default function AdminPanel() {
                           name="viewFinancials"
                           checked={permissions.viewFinancials}
                           onChange={handlePermissionChange}
-                          label="View financial summary"
+                          label={t('viewFinancialSummary')}
                         />
                       </div>
                       <div className="bg-white p-3 rounded-lg border border-blue-200">
@@ -391,7 +393,7 @@ export default function AdminPanel() {
                           name="editInvoices"
                           checked={permissions.editInvoices}
                           onChange={handlePermissionChange}
-                          label="Edit invoices"
+                          label={t('editInvoices')}
                         />
                       </div>
                       <div className="bg-white p-3 rounded-lg border border-blue-200">
@@ -399,7 +401,7 @@ export default function AdminPanel() {
                           name="undoInvoice"
                           checked={permissions.undoInvoice}
                           onChange={handlePermissionChange}
-                          label="Undo invoices"
+                          label={t('undoInvoices')}
                         />
                       </div>
                       <div className="bg-white p-3 rounded-lg border border-blue-200">
@@ -407,7 +409,7 @@ export default function AdminPanel() {
                           name="deleteInvoices"
                           checked={permissions.deleteInvoices}
                           onChange={handlePermissionChange}
-                          label="Delete invoices (Only Developers)"
+                          label={t('deleteInvoices')}
                         />
                       </div>
                     </FormGroup>
@@ -436,14 +438,14 @@ export default function AdminPanel() {
                   }}
                   className="px-6 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-all"
                 >
-                  Cancel
+                  {t('cancel')}
                 </Button>
                 <Button
                   onClick={handleSubmit}
                   className="px-8 py-2.5 text-sm font-medium text-white bg-gray-900 rounded-lg hover:bg-gray-800 shadow-md hover:shadow-lg transition-all flex items-center gap-2"
                 >
                   <UserPlus size={16} />
-                  <span>Create User</span>
+                  <span>{t('createUser')}</span>
                 </Button>
               </div>
             </div>
@@ -455,7 +457,7 @@ export default function AdminPanel() {
           <div className="bg-gradient-to-r from-gray-900 to-gray-800 px-6 py-4 border-b border-gray-200">
             <div className="flex items-center gap-3">
               <Users className="w-5 h-5 text-white" />
-              <h2 className="text-lg font-semibold text-white">User Management</h2>
+              <h2 className="text-lg font-semibold text-white">{t('userManagement')}</h2>
             </div>
           </div>
           <div>

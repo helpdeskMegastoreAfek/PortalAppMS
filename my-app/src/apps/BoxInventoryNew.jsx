@@ -1,6 +1,7 @@
 'use client';
 import toast, { Toaster } from 'react-hot-toast';
 import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import Header from '../components/Header'; 
 import Sidebar from '../components/Sidebar'; 
 import {
@@ -35,6 +36,7 @@ const driverNames = [
 ];
 
 export default function BoxInventoryNew() {
+  const { t } = useTranslation();
   const user = JSON.parse(localStorage.getItem('user')) || { username: 'test_user' };
 
   // --- TAB STATE ---
@@ -126,7 +128,7 @@ export default function BoxInventoryNew() {
 
   const handleSyncWave = async () => {
     if (!waveNumber) {
-      toast.error('נא להזין מספר גל');
+      toast.error(t('pleaseEnterWaveNumber'));
       return;
     }
     
@@ -137,11 +139,11 @@ export default function BoxInventoryNew() {
     setExpandedOrder(null);
     setDispatchCoolers(0); 
     
-    const toastId = toast.loading(`מושך נתונים לגל ${waveNumber}...`);
+    const toastId = toast.loading(`${t('loadingDataForWave')} ${waveNumber}...`);
 
     try {
       const res = await fetch(`${API_URL}/api/test/manifest?waveNumber=${waveNumber}`);
-      if (!res.ok) throw new Error('שגיאה בתקשורת לשרת');
+      if (!res.ok) throw new Error(t('errorCommunicatingServer'));
       const data = await res.json();
 
       if (Array.isArray(data) && data.length > 0) {
@@ -583,7 +585,7 @@ export default function BoxInventoryNew() {
                 }`}
              >
                 <Truck className={`w-5 h-5 transition-transform ${activeTab === 'dispatch' ? 'scale-110' : ''}`}/>
-                הוצאה למשלוח
+                {t('dispatch')}
              </button>
              <button 
                 onClick={() => setActiveTab('return')}
@@ -594,7 +596,7 @@ export default function BoxInventoryNew() {
                 }`}
              >
                 <RotateCcw className={`w-5 h-5 transition-transform ${activeTab === 'return' ? 'scale-110' : ''}`}/>
-                החזרת סחורה
+                {t('return')}
              </button>
           </div>
 
@@ -618,27 +620,27 @@ export default function BoxInventoryNew() {
               <div className="bg-white/90 backdrop-blur-sm p-5 rounded-2xl shadow-lg border border-gray-200/50 grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div className="space-y-2">
                   <label className="flex items-center gap-1 text-xs font-bold text-gray-600 mb-2">
-                    <Truck className="w-3 h-3 text-blue-500"/> מספר רכב
+                    <Truck className="w-3 h-3 text-blue-500"/> {t('vehicleNumber')}
                   </label>
                   <select 
                     value={vehicleNumber} 
                     onChange={e => setVehicleNumber(e.target.value)} 
                     className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all duration-200 font-medium text-gray-700 hover:border-gray-300"
                   >
-                    <option value="">בחר רכב...</option>
+                    <option value="">Select vehicle...</option>
                     {vehicleNumbers.map(n => <option key={n} value={n}>{n}</option>)}
                   </select>
                 </div>
                 <div className="space-y-2">
                   <label className="flex items-center gap-1 text-xs font-bold text-gray-600 mb-2">
-                    <User className="w-3 h-3 text-blue-500"/> שם נהג
+                    <User className="w-3 h-3 text-blue-500"/> {t('driverName')}
                   </label>
                   <select 
                     value={driverName} 
                     onChange={e => setDriverName(e.target.value)} 
                     className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all duration-200 font-medium text-gray-700 hover:border-gray-300"
                   >
-                    <option value="">בחר נהג...</option>
+                    <option value="">Select driver...</option>
                     {driverNames.map(n => <option key={n} value={n}>{n}</option>)}
                   </select>
                 </div>
@@ -681,7 +683,7 @@ export default function BoxInventoryNew() {
                   <div className="max-w-xs mx-auto space-y-4">
                     <input 
                       type="text" 
-                      placeholder="הזן מספר גל (למשל: 1)"
+                      placeholder={t('waveNumber')}
                       value={waveNumber}
                       onChange={e => setWaveNumber(e.target.value)}
                       className="w-full p-4 border-2 border-blue-200 rounded-2xl text-center font-bold text-xl bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all duration-200 shadow-md"
@@ -707,7 +709,7 @@ export default function BoxInventoryNew() {
                       <div className="flex-1 bg-gradient-to-br from-blue-600 via-blue-700 to-blue-800 rounded-2xl p-8 text-white shadow-2xl flex flex-col items-center justify-center border-2 border-blue-400/50 relative overflow-hidden group hover:scale-105 transition-transform duration-300">
                           <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent"></div>
                           <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-300 to-blue-500"></div>
-                          <span className="text-blue-200 text-xs font-bold uppercase tracking-widest mb-2 relative z-10">מספר גל (Wave)</span>
+                          <span className="text-blue-200 text-xs font-bold uppercase tracking-widest mb-2 relative z-10">{t('waveNumber')}</span>
                           <div className="flex items-center gap-3 relative z-10">
                               <Package className="w-10 h-10 opacity-70 group-hover:opacity-100 transition-opacity"/>
                               <span className="text-6xl font-mono font-bold drop-shadow-lg">{waveNumber}</span>
@@ -762,7 +764,7 @@ export default function BoxInventoryNew() {
                         type="text"
                         value={dispatchBarcodeInput}
                         onChange={e => setDispatchBarcodeInput(e.target.value)}
-                        placeholder="סרוק קופסה להסרה..."
+                        placeholder={t('scanBarcode')}
                         className="flex-1 p-4 rounded-xl border-2 border-red-300 bg-white focus:outline-none focus:ring-4 focus:ring-red-200 focus:border-red-500 text-lg font-medium shadow-md transition-all duration-200"
                         inputMode="numeric"
                       />

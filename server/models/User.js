@@ -36,6 +36,17 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: true, 
   },
+  // IP Tracking
+  lastLoginIP: {
+    type: String,
+    default: null
+  },
+  knownIPs: [{
+    ip: String,
+    firstSeen: { type: Date, default: Date.now },
+    lastSeen: { type: Date, default: Date.now },
+    loginCount: { type: Number, default: 1 }
+  }]
 });
 
 module.exports = mongoose.model("User", userSchema);

@@ -2,8 +2,6 @@ const express = require("express");
 const mongoose = require("mongoose");
 const dotenv = require("dotenv");
 const cors = require("cors");
-const https = require('https');
-const fs = require('fs');
 const path = require('path');
 
 
@@ -14,17 +12,19 @@ const app = express();
 const corsOptions = {
   origin: [
     "https://172.20.0.49:5173",
-  "http://172.20.0.49:5173",
-  "http://10.0.0.102:5173",
-  "https://localhost:5173",
-  "http://localhost:5173",
-  "http://localhost:4173",   
+    "http://172.20.0.49:5173",
+    "http://10.0.0.102:5173",
+    "https://localhost:5173",
+    "http://localhost:5173",
+    "http://localhost:4173",
+    "https://10.0.0.5:5173",
+    "http://10.0.0.5:5173",
   ],
-  credentials: true,   
+  credentials: true,
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
-  optionsSuccessStatus: 200 
-};  
+  allowedHeaders: ["Content-Type", "Authorization", "x-auth-token"],
+  optionsSuccessStatus: 200,
+};
 
 app.use(cors(corsOptions));
 app.use(express.json());
@@ -78,23 +78,20 @@ app.use('/api/test', testRoutes);
 const dashboardRoutes = require('./routes/dashboard.routes');
 app.use('/api/dashboard', dashboardRoutes);
 
+const sessionsRoutes = require('./routes/sessions');
+app.use('/api/sessions', sessionsRoutes);
+
 // app.use(express.static(path.join(__dirname, 'public/dist')));
 // app.get(/.*/, (req, res) => {
 //   res.sendFile(path.join(__dirname, 'public/dist', 'index.html'));
 // });
 
-const httpsOptions = {
-  key: fs.readFileSync('../my-app/172.20.0.49-key.pem'), 
-  cert: fs.readFileSync('../my-app/172.20.0.49.pem')
-}
-
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => {
     console.log("MongoDB connected");
-    https.createServer(httpsOptions, app).listen(3000, "0.0.0.0", () => {
-      console.log("✅ Server is running securely on HTTPS port 3000");
+    app.listen(3000, "0.0.0.0", () => {
+      console.log("✅ Server is running on HTTP port 3000");
     });
-    
   })
   .catch((err) => console.error(err));

@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import Header from '../components/Header';
 import {
   Utensils,
@@ -25,10 +26,10 @@ import {
   ArrowUpDown
 } from 'lucide-react';
 
-const apps = [
+const getApps = (t) => [
     {
-      title: 'Meal Ordering',
-      description: 'Order your daily meals for the workweek',
+      title: t('mealOrdering'),
+      description: t('orderDailyMeals'),
       icon: <Utensils className="w-6 h-6" />,
       link: '/meal',
       accent: 'border-l-orange-400',
@@ -39,7 +40,7 @@ const apps = [
     },
     {
       title: 'Admin Meal Ordering',
-      description: 'Manage daily meals for the workweek',
+      description: t('manageDailyMeals'),
       icon: <Utensils className="w-6 h-6" />,
       link: '/adminMeal',
       accent: 'border-l-orange-400',
@@ -49,8 +50,8 @@ const apps = [
       category: 'meal',
     },
     {
-      title: 'Box & Cooler Inventory',
-      description: 'Track boxes and coolers inventory',
+      title: t('boxCoolerInventory'),
+      description: t('trackBoxesCoolers'),
       icon: <Package className="w-6 h-6" />,
       link: '/boxes',
       accent: 'border-l-blue-400',
@@ -60,8 +61,8 @@ const apps = [
       category: 'inventory',
     },
     {
-      title: 'Admin Panel Box Inventory',
-      description: 'Add and manage Box Inventory',
+      title: t('adminBoxInventory'),
+      description: t('addManageBoxInventory'),
       icon: <PackageOpen className="w-6 h-6" />,
       link: '/adminBox',
       accent: 'border-l-blue-400',
@@ -71,8 +72,8 @@ const apps = [
       category: 'inventory',
     },
     {
-      title: 'Dashboard Box and Waves',
-      description: 'Submit and track IT support requests',
+      title: t('dashboardBoxWaves'),
+      description: t('submitTrackITRequests'),
       icon: <Laptop2 className="w-6 h-6" />,
       link: '/Dashboard',
       accent: 'border-l-green-400',
@@ -82,8 +83,8 @@ const apps = [
       category: 'dashboard',
     },
     {
-      title: 'Statistics',
-      description: 'Submit and track service requests',
+      title: t('statistics'),
+      description: t('submitTrackServiceRequests'),
       icon: <ChartNoAxesCombined className="w-6 h-6" />,
       link: '/statistics',
       accent: 'border-l-purple-400',
@@ -93,8 +94,8 @@ const apps = [
       category: 'analytics',
     },
     {
-      title: 'Invoices',
-      description: 'Management data of invoices ',
+      title: t('invoices'),
+      description: t('managementDataInvoices'),
       icon: <File className="w-6 h-6" />,
       link: '/invoice',
       accent: 'border-l-yellow-400',
@@ -104,8 +105,8 @@ const apps = [
       category: 'finance',
     },
     {
-      title: 'Scanner',
-      description: 'Document Scanner imag to data and PDF',
+      title: t('scanner'),
+      description: t('documentScanner'),
       icon: <Camera className="w-6 h-6" />,
       link: '/invoiceUploader',
       accent: 'border-l-lime-400',
@@ -115,8 +116,8 @@ const apps = [
       category: 'tools',
     },
     {
-      title: 'Data Sync WMS',
-      description: 'Synchronize data with Warehouse Management System',
+      title: t('dataSyncWMS'),
+      description: t('synchronizeDataWMS'),
       icon: <RefreshCcw className="w-6 h-6" />,
       link: '/DataSyncPage',
       accent: 'border-l-emerald-400',
@@ -127,7 +128,7 @@ const apps = [
     },
     {
       title: 'Box & Cooler Inventory Test',
-      description: 'Test environment for box inventory',
+      description: t('testEnvironmentBoxInventory'),
       icon: <Code className="w-6 h-6" />,
       link: '/BoxInventoryNew',
       accent: 'border-l-emerald-400',
@@ -137,8 +138,8 @@ const apps = [
       category: 'development',
     },
     {
-      title: 'Developer',
-      description: 'Add and manage pages , logs',
+      title: t('developer'),
+      description: t('addManagePagesLogs'),
       icon: <Code className="w-6 h-6" />,
       link: '/developer',
       accent: 'border-l-emerald-400',
@@ -148,7 +149,7 @@ const apps = [
       category: 'development',
     },
     {
-      title: 'Admin Panel',
+      title: t('adminPanel'),
       description: 'Add and manage user access',
       icon: <ShieldCheck className="w-6 h-6" />,
       link: '/admin',
@@ -161,8 +162,8 @@ const apps = [
     },
 ];
 
-const getCategories = () => [
-    { id: 'all', label: 'All Apps' },
+const getCategories = (t) => [
+    { id: 'all', label: t('allApps') },
     { id: 'meal', label: 'Meal' },
     { id: 'inventory', label: 'Inventory' },
     { id: 'dashboard', label: 'Dashboard' },
@@ -174,6 +175,7 @@ const getCategories = () => [
 ];
 
 export default function EmployeePortal() {
+  const { t } = useTranslation();
   const user = JSON.parse(localStorage.getItem('user'));
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -191,6 +193,9 @@ export default function EmployeePortal() {
     const saved = localStorage.getItem('appUsage');
     return saved ? JSON.parse(saved) : {};
   });
+
+  const apps = getApps(t);
+  const categories = getCategories(t);
 
   const toggleFavorite = (link) => {
     setFavorites(prev => {
@@ -269,7 +274,7 @@ export default function EmployeePortal() {
     });
 
     return filtered;
-  }, [user, searchTerm, selectedCategory, sortBy, appUsage]);
+  }, [user, searchTerm, selectedCategory, sortBy, appUsage, apps]);
 
   const favoriteApps = useMemo(() => {
     return filteredApps.filter(app => favorites.includes(app.link));
@@ -286,7 +291,7 @@ export default function EmployeePortal() {
   }, [filteredApps, favorites, recentApps]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
+    <div className="min-h-screen bg-gray-50">
       <Header user={user} />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16">
@@ -321,7 +326,7 @@ export default function EmployeePortal() {
             <input
               id="app-search"
               type="text"
-              placeholder="Search applications... (Ctrl+K)"
+              placeholder={`${t('searchApps')} (Ctrl+K)`}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-12 pr-12 py-3.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white shadow-sm text-gray-900 placeholder-gray-400 transition-all"
@@ -348,7 +353,7 @@ export default function EmployeePortal() {
                   scrollbarColor: '#d1d5db transparent'
                 }}
               >
-                {getCategories().map((cat) => {
+                {categories.map((cat) => {
                   const count = cat.id === 'all' 
                     ? filteredApps.length 
                     : filteredApps.filter(a => a.category === cat.id).length;
@@ -435,7 +440,7 @@ export default function EmployeePortal() {
               <span className="text-sm text-gray-500">({recentAppsList.length})</span>
             </div>
             <div className={viewMode === 'grid' 
-              ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 lg:gap-8"
+              ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5"
               : "space-y-3"
             }>
               {recentAppsList.map((app, index) => (
@@ -464,7 +469,7 @@ export default function EmployeePortal() {
               <span className="text-sm text-gray-500">({favoriteApps.length})</span>
             </div>
             <div className={viewMode === 'grid' 
-              ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 lg:gap-8"
+              ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5"
               : "space-y-3"
             }>
               {favoriteApps.map((app, index) => (
@@ -489,12 +494,12 @@ export default function EmployeePortal() {
             {favoriteApps.length > 0 && (
               <div className="flex items-center gap-2 mb-4">
                 <Filter className="w-5 h-5 text-gray-400" />
-                <h2 className="text-xl font-semibold text-gray-900">All Applications</h2>
+                <h2 className="text-xl font-semibold text-gray-900">{t('allApps')}</h2>
                 <span className="text-sm text-gray-500">({regularApps.length})</span>
               </div>
             )}
             <div className={viewMode === 'grid' 
-              ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 lg:gap-8"
+              ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5"
               : "space-y-3"
             }>
               {regularApps.map((app, index) => (
@@ -520,12 +525,12 @@ export default function EmployeePortal() {
               <Search className="w-10 h-10 sm:w-12 sm:h-12 text-gray-400" />
             </div>
             <h3 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-3">
-              No applications found
+              {t('noAppsFound')}
             </h3>
             <p className="text-base sm:text-lg text-gray-600 max-w-md mx-auto leading-relaxed mb-4">
               {searchTerm 
-                ? `No applications match "${searchTerm}". Try a different search term.`
-                : 'No applications match the selected filters.'
+                ? t('tryAdjustingFilters')
+                : t('tryAdjustingFilters')
               }
             </p>
             {(searchTerm || selectedCategory !== 'all') && (
@@ -536,7 +541,7 @@ export default function EmployeePortal() {
                 }}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
               >
-                Clear filters
+                {t('clearFilters')}
               </button>
             )}
           </div>
@@ -591,104 +596,131 @@ function AppCard({ app, index, viewMode, isFavorite, onToggleFavorite, onTrackUs
   const isPopular = usageCount >= 10;
   const isNew = false; // Can be extended with a 'new' property in app data
 
+  if (viewMode === 'list') {
+    // List view - simpler layout
+    return (
+      <a
+        href={app.link}
+        onClick={handleClick}
+        className="group block focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+      >
+        <div className="relative bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200 cursor-pointer">
+          <div className="p-4 flex items-center gap-4">
+            <div className={`p-3 ${app.iconBg} rounded-xl flex-shrink-0`}>
+              <div className={app.iconColor}>{app.icon}</div>
+            </div>
+            <div className="flex-1 min-w-0">
+              <h3 className="text-base font-semibold text-gray-900 leading-tight mb-1">
+                {app.title}
+              </h3>
+              <p className="text-sm text-gray-600 line-clamp-1">
+                {app.description || 'No description available'}
+              </p>
+            </div>
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onToggleFavorite(app.link);
+              }}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors flex items-center gap-1.5 flex-shrink-0 ${
+                isFavorite
+                  ? 'bg-gray-900 text-white border-gray-900'
+                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+              }`}
+            >
+              <Star className={`w-3 h-3 ${isFavorite ? 'fill-white' : ''}`} />
+              {isFavorite ? 'Saved' : 'Save'}
+            </button>
+          </div>
+        </div>
+      </a>
+    );
+  }
+
+  // Grid view - card design similar to job listings
   return (
     <a
       href={app.link}
       onClick={handleClick}
-      className={`group block focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded-xl animate-in fade-in slide-in-from-bottom-4 duration-500 ${
-        viewMode === 'list' ? 'flex items-center gap-4' : ''
-      }`}
-      style={{ animationDelay: `${index * 50}ms` }}
+      className="group block focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
     >
-      <div
-        className={`
-          relative bg-white border border-gray-200 ${app.accent} border-l-4
-          rounded-xl overflow-hidden
-          transition-all duration-300 ease-out
-          hover:shadow-xl hover:-translate-y-2 hover:border-gray-300
-          cursor-pointer h-full
-          before:absolute before:inset-0 before:bg-gradient-to-br ${app.gradient} before:opacity-0 before:transition-opacity before:duration-300
-          hover:before:opacity-100
-          ${viewMode === 'list' ? 'flex-1' : ''}
-        `}
-      >
-        <div className={`relative ${viewMode === 'list' ? 'p-4 flex items-center gap-4' : 'p-6 sm:p-8'}`}>
-          <div className={`flex items-start ${viewMode === 'list' ? 'items-center' : 'justify-between'} ${viewMode === 'list' ? 'gap-4 flex-1' : 'mb-5 sm:mb-6'}`}>
-            <div className="flex items-center gap-3 flex-1">
-              <div
-                className={`p-3 sm:p-4 ${app.iconBg} rounded-xl group-hover:scale-110 transition-transform duration-300 shadow-sm flex-shrink-0`}
-              >
-                <div className={app.iconColor}>{app.icon}</div>
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1 flex-wrap">
-                  <h3 className={`${viewMode === 'list' ? 'text-base' : 'text-lg sm:text-xl'} font-semibold text-gray-900 group-hover:text-gray-800 transition-colors leading-tight`}>
-                    {app.title}
-                  </h3>
-                  <div className="flex items-center gap-1.5 flex-shrink-0">
-                    {/* Badges */}
-                    {isRecent && (
-                      <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-medium rounded-full flex items-center gap-1">
-                        <Clock className="w-3 h-3" />
-                        Recent
-                      </span>
-                    )}
-                    {isPopular && (
-                      <span className="px-2 py-0.5 bg-purple-100 text-purple-700 text-xs font-medium rounded-full flex items-center gap-1">
-                        <TrendingUp className="w-3 h-3" />
-                        Popular
-                      </span>
-                    )}
-                    {isNew && (
-                      <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs font-medium rounded-full flex items-center gap-1">
-                        <Sparkles className="w-3 h-3" />
-                        New
-                      </span>
-                    )}
-                    {/* Favorite Button */}
-                    <button
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        onToggleFavorite(app.link);
-                      }}
-                      className="p-1 hover:bg-gray-100 rounded transition-colors"
-                      title={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
-                    >
-                      <Star
-                        className={`w-4 h-4 ${
-                          isFavorite
-                            ? 'text-yellow-500 fill-yellow-500'
-                            : 'text-gray-400 hover:text-yellow-500'
-                        } transition-colors`}
-                      />
-                    </button>
-                  </div>
-                </div>
-                <p className={`${viewMode === 'list' ? 'text-sm' : 'text-sm sm:text-base'} text-gray-600 leading-relaxed ${viewMode === 'list' ? 'line-clamp-1' : 'line-clamp-2'}`}>
-                  {app.description || 'No description available'}
-                </p>
-                {usageCount > 0 && (
-                  <div className="mt-1.5 flex items-center gap-1 text-xs text-gray-500">
-                    <TrendingUp className="w-3 h-3" />
-                    <span>Used {usageCount} {usageCount === 1 ? 'time' : 'times'}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-            <ArrowRight
-              className={`w-5 h-5 ${app.iconColor} opacity-60 group-hover:opacity-100 group-hover:translate-x-1 transition-all duration-300 flex-shrink-0 ${viewMode === 'list' ? 'ml-2' : ''}`}
-            />
+      <div className="relative bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-200 cursor-pointer h-full flex flex-col">
+        {/* Top Section - Logo and Save Button */}
+        <div className="p-5 pb-4 flex items-start justify-between">
+          <div className={`w-14 h-14 ${app.iconBg} rounded-full flex items-center justify-center flex-shrink-0 shadow-sm`}>
+            <div className={app.iconColor}>{app.icon}</div>
+          </div>
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onToggleFavorite(app.link);
+            }}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors flex items-center gap-1.5 ${
+              isFavorite
+                ? 'bg-gray-900 text-white border-gray-900'
+                : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+            }`}
+          >
+            <Star className={`w-3 h-3 ${isFavorite ? 'fill-white' : ''}`} />
+            {isFavorite ? 'Saved' : 'Save'}
+          </button>
+        </div>
+
+        {/* Middle Section - Title, Badges, Description */}
+        <div className="px-5 pb-4 flex-1">
+          <h3 className="text-lg font-bold text-gray-900 mb-2 leading-tight">
+            {app.title}
+          </h3>
+          
+          {/* Badges */}
+          <div className="flex flex-wrap gap-2 mb-3">
+            {isRecent && (
+              <span className="px-2.5 py-1 bg-gray-100 text-gray-700 text-xs font-normal rounded border border-gray-200">
+                Recent
+              </span>
+            )}
+            {isPopular && (
+              <span className="px-2.5 py-1 bg-gray-100 text-gray-700 text-xs font-normal rounded border border-gray-200">
+                Popular
+              </span>
+            )}
+            {usageCount > 0 && (
+              <span className="px-2.5 py-1 bg-gray-100 text-gray-700 text-xs font-normal rounded border border-gray-200">
+                {usageCount} uses
+              </span>
+            )}
           </div>
 
-          {viewMode === 'grid' && (
-            <div className="mt-6 pt-4 border-t border-gray-100 group-hover:border-gray-200 transition-colors">
-              <span className="text-xs sm:text-sm text-gray-500 group-hover:text-gray-700 transition-colors font-medium inline-flex items-center gap-1">
-                Open app
-                <ArrowRight className="w-3 h-3 inline-block group-hover:translate-x-1 transition-transform" />
-              </span>
+          <p className="text-sm text-gray-600 leading-relaxed line-clamp-2">
+            {app.description || 'No description available'}
+          </p>
+        </div>
+
+        {/* Bottom Section - Category and Action Button */}
+        <div className="px-5 pb-5 pt-4 border-t border-gray-100">
+          <div className="flex items-center justify-between">
+            <div className="flex flex-col">
+              <span className="text-xs text-gray-500 capitalize">{app.category}</span>
+              {usageCount > 0 && (
+                <span className="text-xs text-gray-400 mt-0.5">
+                  Used {usageCount} {usageCount === 1 ? 'time' : 'times'}
+                </span>
+              )}
             </div>
-          )}
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleClick();
+                window.location.href = app.link;
+              }}
+              className="px-5 py-2.5 bg-gray-900 text-white text-sm font-semibold rounded-lg hover:bg-gray-800 transition-colors"
+            >
+              Open app
+            </button>
+          </div>
         </div>
       </div>
     </a>
